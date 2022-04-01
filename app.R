@@ -101,7 +101,7 @@ ui <- dashboardPage(
     # in a page. It's not strictly necessary in this case, but
     # it's good practice.
     singleton(tags$head(tags$script(src = "message-handler.js"))),
-    tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"Use this file uploader to select the Excel file of the data you would like checked for errors.  The file needs to be in an Excel format (.xls or .xlsx) and should include the standard columns from either MIS output or the historical DBF Uploader. The column names must not be modified. Note: This file uploader can only handle file sizes of 30MB or less. The larger the file the longer it will take to check the data.",align='left'),
+    tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"Use this file uploader to select the Excel file of the data you would like checked for errors.  The file needs to be in an Excel format (.xls or .xlsx) and should include the standard columns from either MIS output or the historical DBF Uploader. The column names must not be modified. Note: This file uploader can only handle file sizes of 30MB or less. Please be aware that the larger the file the longer it will take to check the data.",align='left'),
     tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"Select the data type then upload the file you want to check.  Then click the button to run the data checker",align='left'),
     ## User inputs or from our study
     radioButtons(inputId = "datatype",label="Is your data from MIS (most common) or the historical database (DBF uploader)?",
