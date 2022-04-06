@@ -63,8 +63,8 @@ options(shiny.maxRequestSize = 30*1024^2)
 ### 
 
 ### Read in Error code file
-Fix_Comments <- read_excel("www/DataCheckingErrorCodes.xlsx")
-misdbf=read.csv("www/MIS_DBF_colnames.csv")
+Fix_Comments <- read_excel("DataCheckingErrorCodes.xlsx")
+misdbf=read.csv("MIS_DBF_colnames.csv")
 
 ### County information
 stfp <- 1:56
@@ -101,7 +101,7 @@ ui <- dashboardPage(
     # in a page. It's not strictly necessary in this case, but
     # it's good practice.
     singleton(tags$head(tags$script(src = "message-handler.js"))),
-    tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"Use this file uploader to select the Excel file of the data you would like checked for errors.  The file needs to be in an Excel format (.xls or .xlsx) and should include the standard columns from either MIS output or the historical DBF Uploader. The column names must not be modified. Note: This file uploader can only handle file sizes of 30MB or less. Please be aware that the larger the file the longer it will take to check the data.",align='left'),
+    tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"Use this file uploader to select the Excel file of the data you would like checked for errors.  The file needs to be in an Excel format (.xls or .xlsx) and should include the standard columns from either MIS output or the historical DBF Uploader. The column names must not be modified. Note: This file uploader can only handle file sizes of 30MB or less. The larger the file the longer it will take to check the data.",align='left'),
     tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"Select the data type then upload the file you want to check.  Then click the button to run the data checker",align='left'),
     ## User inputs or from our study
     radioButtons(inputId = "datatype",label="Is your data from MIS (most common) or the historical database (DBF uploader)?",
@@ -195,7 +195,6 @@ server <- function(input, output,session) {
     #This is the file dumped from MIS
     ### New option for importing the data
     NRMP_Masters <- read_excel(input$ersdata$datapath)
-    NRMP_Masters$colnum=dim(NRMP_Masters)[2]
     
     
     ### Change the names of the columns if the data came from the historical data checker
@@ -208,6 +207,7 @@ server <- function(input, output,session) {
     }else{
       NRMP_Master=NRMP_Masters
     }
+    NRMP_Master$colnum=dim(NRMP_Masters)[2]
     NRMP_Master$AmyID=1:dim(NRMP_Master)[1]
     # NRMP_Master=NRMP_Master[!is.na(NRMP_Master$STATE),]
     
@@ -693,6 +693,7 @@ server <- function(input, output,session) {
       write.csv(data()[,c(1:data()$colnum[1],which(names(data())%in%c("State_on_record","State_from_GPS","County_on_record","County_from_GPS","Errors")))], file,row.names = FALSE,na="")
     }
   )
+  
   session$onSessionEnded(stopApp)
   
 }
