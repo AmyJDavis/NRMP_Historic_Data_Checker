@@ -10,7 +10,7 @@ Below is a step by step guide on how to open and use the NRMP Data Cleaning App 
 
 ## Files included
 
-The following files need to be saved to a folder on your computer that will serve as the working directory. 
+The following files need to be saved to a folder on your computer that will serve as the working directory. From the main repository page for the "NRMP_Historic_Data_Checker" on the right hand side there should be a section called "Releases".  If you click on that, you can download a zip or tar.gz file of all of the files in this repository.  Specifically to run the app you will need: 
 
 1. app.R - This is the R code you will need to open in R via RStudio to run the shiny app (used in Step 4) 
 2. www - You will need to have a folder within your working direction named 'www'.  The following files need to be within the www folder.
