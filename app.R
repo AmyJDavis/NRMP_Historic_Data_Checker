@@ -63,8 +63,8 @@ options(shiny.maxRequestSize = 30*1024^2)
 ### 
 
 ### Read in Error code file
-Fix_Comments <- read_excel("DataCheckingErrorCodes.xlsx")
-misdbf=read.csv("MIS_DBF_colnames.csv")
+Fix_Comments <- read_excel("www/DataCheckingErrorCodes.xlsx")
+misdbf=read.csv("www/MIS_DBF_colnames.csv")
 
 ### County information
 stfp <- 1:56
