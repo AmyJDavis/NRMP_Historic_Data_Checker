@@ -207,7 +207,7 @@ server <- function(input, output,session) {
     }else{
       NRMP_Master=NRMP_Masters
     }
-    NRMP_Master$colnum=dim(NRMP_Masters)[2]
+    NRMP_Master$colnum=dim(NRMP_Masters)[2]-1
     NRMP_Master$AmyID=1:dim(NRMP_Master)[1]
     # NRMP_Master=NRMP_Master[!is.na(NRMP_Master$STATE),]
     
