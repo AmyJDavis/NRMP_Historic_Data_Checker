@@ -63,7 +63,7 @@ options(shiny.maxRequestSize = 30*1024^2)
 ### 
 
 ### Read in Error code file
-Fix_Comments <- read_excel("www/DataCheckingErrorCodes.xlsx")
+Fix_Comments <- read_excel("www/DataCheckingErrorCodesDBF.xlsx")
 misdbf=read.csv("www/MIS_DBF_colnames.csv")
 
 ### County information
@@ -178,7 +178,7 @@ ui <- dashboardPage(
       ),
       tabPanel("Error Definitions",
                tags$iframe(style="height:1000px; width:100%; scrolling=yes", 
-                           src="DataCheckingErrorCodes.pdf"))
+                           src="DataCheckingErrorCodesDBF.pdf"))
     )
   )
 )
@@ -324,7 +324,7 @@ server <- function(input, output,session) {
     ###
     ######################################
     
-    NRMP_Master$F04=ifelse(grepl("CAGE TRAP|FIREARMS|HANDCAUGHT/GATHERED|LEG/FOOT HOLD TRAP",NRMP_Master$METHOD)& NRMP_Master$COLLECTOR!="WS",1,0)
+    NRMP_Master$F04=ifelse(grepl("CAGE TRAP|FIREARMS|HANDCAUGHT/GATHERED|LEG/FOOT HOLD TRAP|ROAD KILL|WS INCIDENTAL TAKE ",NRMP_Master$METHOD)& NRMP_Master$COLLECTOR!="WS",1,0)
     NRMP_Master$F05=ifelse(NRMP_Master$METHOD=="CAGE TRAP"& !grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|OTHER|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
     NRMP_Master$F06=ifelse(NRMP_Master$METHOD=="HANDCAUGHT/GATHERED"&!grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|OTHER|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
     NRMP_Master$F06b=ifelse(NRMP_Master$METHOD=="LEG/FOOT HOLD TRAP"& !grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|OTHER|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
@@ -447,9 +447,23 @@ server <- function(input, output,session) {
     NRMP_Master$F37=ifelse((NRMP_Master$ACTIVITY=="COORDINATED TVR"|NRMP_Master$ACTIVITY=="TRAPPING (ORV NAIVE)"|NRMP_Master$ACTIVITY=="TRAPPING (ORV POST-BAIT)")&NRMP_Master$SPECIES%in%targetsps&NRMP_Master$TARGETSPECIES!="YES",1,0)
     NRMP_Master$F37=ifelse(!NRMP_Master$SPECIES%in%targetsps&NRMP_Master$SPECIES!="NO SPECIES"&NRMP_Master$TARGETSPECIES!="NO",1,NRMP_Master$F37)
     
-    ### Error if the VNA interpret does not match the IUML information
-    NRMP_Master$VNAvals=as.numeric(gsub("<|>|=",replacement = "",NRMP_Master$RABIESVNA_IUML))
-    NRMP_Master$F38=ifelse(grepl("<",NRMP_Master$RABIESVNA_IUML)&NRMP_Master$RABIESVNAINTERPRET!="NEGATIVE",1,0)
+    ### Error if ACTIVITY and ORVNAIVE don't match
+    NRMP_Master$F39=ifelse(NRMP_Master$ACTIVITY=="TRAPPING (ORV NAIVE)"&NRMP_Master$ORVNAIVE!="YES",1,0)
+    NRMP_Master$F39=ifelse(NRMP_Master$ACTIVITY=="TRAPPING (ORV POST-BAIT)"&NRMP_Master$ORVNAIVE!="NO",1,NRMP_Master$F39)
+    
+    ### Error for negative days since last orv
+    NRMP_Master$F40=ifelse(NRMP_Master$DAYSPOSTBAIT<0,1,0)
+    NRMP_Master$F40[is.na(NRMP_Master$F40)]=0
+    
+    ### Error for ORVNAIVE and bait type match
+    NRMP_Master$F41=ifelse(NRMP_Master$ORVNAIVE=="YES"&NRMP_Master$ORVBAITTYPE!="NONE (NAIVE)",1,0)
+    NRMP_Master$F41=ifelse(NRMP_Master$ORVNAIVE=="NO"&(is.na(NRMP_Master$ORVBAITTYPE)|NRMP_Master$ORVBAITTYPE=="NONE (NAIVE)"),1,NRMP_Master$F41)
+    NRMP_Master$F41=ifelse((!is.na(NRMP_Master$ORVBAITTYPE)|NRMP_Master$ORVBAITTYPE!="NONE (NAIVE)")&is.na(NRMP_Master$ORVNAIVE),1,NRMP_Master$F41)
+    NRMP_Master$F41[is.na(NRMP_Master$F41)]=0
+    
+    ### Error for ORVNAIVE is no DATELASTORV must have a value
+    NRMP_Master$F42=ifelse(NRMP_Master$ORVNAIVE=="NO"&is.na(NRMP_Master$DATELASTORV),1,0)
+    NRMP_Master$F42[is.na(NRMP_Master$F42)]=0
     
     
     ######################################
@@ -457,8 +471,6 @@ server <- function(input, output,session) {
     ### Collecting results
     ###
     ######################################
-    
-    
     errordf=NRMP_Master[,which(names(NRMP_Master)%in%names(Fixdf))]
     errordf[is.na(errordf)]=1
     
