@@ -101,7 +101,7 @@ ui <- dashboardPage(
     # in a page. It's not strictly necessary in this case, but
     # it's good practice.
     singleton(tags$head(tags$script(src = "message-handler.js"))),
-    tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"Use this file uploader to select the Excel file of the data you would like checked for errors.  The file needs to be in an Excel format (.xls or .xlsx) and should include the standard columns from either MIS output or the historical DBF Uploader. The column names must not be modified. Note: This file uploader can only handle file sizes of 30MB or less. The larger the file the longer it will take to check the data.",align='left'),
+    tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"Use this file uploader to select the Excel file of the data you would like checked for errors.  The file needs to be in an Excel format (.xls or .xlsx) and should include the standard columns from either MIS output or the historical DBF Uploader. The column names must not be modified. Note: This file uploader can only handle file sizes of 30MB or less. The larger the file the longer it will take to check the data. If you are uploading a very large file, I recommend downloading the data with errors first before viewing other tabs. The Location Check tab in particular will take a long time to plot for large datasets.",align='left'),
     tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"Select the data type then upload the file you want to check.  Then click the button to run the data checker",align='left'),
     ## User inputs or from our study
     radioButtons(inputId = "datatype",label="Is your data from MIS (most common) or the historical database (DBF uploader)?",
@@ -118,6 +118,16 @@ ui <- dashboardPage(
   # Show output
   dashboardBody(
     tabsetPanel(
+      tabPanel("Summary of Errors",
+               box(width=12,title=span("Summary of errors in the data",style="color:blue;font-size:28px"),status="success",
+                   # varImp Plot
+                   column(10,plotOutput('ErrorPlots'))
+               ),
+               box(width=12,title=span("Table of data errors by code",style="color:blue;font-size:28px"),status="success",
+                   #confusion matrix, model accuracy metrics
+                   column(10,withSpinner(dataTableOutput(outputId="tableerror")))
+               )
+      ),
       tabPanel("Location Check",
                box(width=12,title=span("Map of MIS samples",style="color:blue;font-size:28px"),status="success",
                    withSpinner(leafletOutput(outputId = "mapx"))
@@ -164,16 +174,6 @@ ui <- dashboardPage(
                box(width=12,title=span("Distribution of RVNA results by interpretation",style="color:blue;font-size:28px"),status="success",
                    # varImp Plot
                    column(6,plotOutput('VNAresult'))
-               )
-      ),
-      tabPanel("Summary of Errors",
-               box(width=12,title=span("Summary of errors in the data",style="color:blue;font-size:28px"),status="success",
-                   # varImp Plot
-                   column(10,plotOutput('ErrorPlots'))
-               ),
-               box(width=12,title=span("Table of data errors by code",style="color:blue;font-size:28px"),status="success",
-                   #confusion matrix, model accuracy metrics
-                   column(10,withSpinner(dataTableOutput(outputId="tableerror")))
                )
       ),
       tabPanel("Error Definitions",
