@@ -63,7 +63,7 @@ options(shiny.maxRequestSize = 30*1024^2)
 ### 
 
 ### Read in Error code file
-Fix_Comments <- read_excel("www/DataCheckingErrorCodesDBF.xlsx")
+Fix_Comments <- read_excel("www/DataCheckingErrorCodesAll.xlsx")
 misdbf=read.csv("www/MIS_DBF_colnames.csv")
 
 ### County information
@@ -178,7 +178,10 @@ ui <- dashboardPage(
       ),
       tabPanel("Error Definitions",
                tags$iframe(style="height:1000px; width:100%; scrolling=yes", 
-                           src="DataCheckingErrorCodesDBF.pdf"))
+                           src="DataCheckingErrorCodesAll.pdf")),
+      tabPanel("Method/Fate Scenarios",
+               tags$iframe(style="height:1000px; width:100%; scrolling=yes", 
+                           src="scenarios.pdf"))
     )
   )
 )
@@ -192,8 +195,8 @@ server <- function(input, output,session) {
     req(input$ersdata)
     req(input$datatype)
     #### Read in Data ####
-    #This is the file dumped from MIS
-    ### New option for importing the data
+    # This is the file dumped from MIS
+    # New option for importing the data
     NRMP_Masters <- read_excel(input$ersdata$datapath)
     
     
@@ -226,14 +229,14 @@ server <- function(input, output,session) {
     ### Check County and State ####
     ###
     ######################################
-    #setwd("~/R/Rabies_Datachecker_3")
-    #Get US Counties for desired States from tigris
+    # setwd("~/R/Rabies_Datachecker_3")
+    # Get US Counties for desired States from tigris
     
     fips <- fips_codes
     fips$FIPS=paste(fips$state_code,fips$county_code,sep="")
     NRMP_Master$State_on_record=toupper(fips[match(NRMP_Master$STATE,fips$state),"state_name"])
     
-    ### AJD edit to get county polygon data frame information
+    # AJD edit to get county polygon data frame information
     uscd=tigris::counties(state=stfp,cb = TRUE)
     uscsf=uscd$geometry
     uscs=as(uscsf,"Spatial")
@@ -242,10 +245,10 @@ server <- function(input, output,session) {
     # Create dataframe with correct rownames
     p.df <- data.frame( GEOID=uscd$GEOID, row.names = pid)
     usc=SpatialPolygonsDataFrame(uscs,data = p.df)
-    #Define coordinate system for NRMP data and pull coordinate system from tigris counties file
+    # Define coordinate system for NRMP data and pull coordinate system from tigris counties file
     usc_crs <- proj4string(usc)
     NRMP_crs <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84")
-    #Get NRMP and usc ready for over()
+    # Get NRMP and usc ready for over()
     NRMP_Master$LONGITUDE[is.na(NRMP_Master$LONGITUDE)] <- 0
     NRMP_Master$LATITUDE[is.na(NRMP_Master$LATITUDE)] <- 0
     
@@ -253,16 +256,15 @@ server <- function(input, output,session) {
     coordinates(NRMP_locs) <- c('LONGITUDE', 'LATITUDE')
     proj4string(NRMP_locs) <- usc_crs
     NRMP_Co_ref <- spTransform(NRMP_locs, usc_crs)
-    #Perform over()
+    # Perform over()
     Co_per_NRMP_rec <- over(NRMP_Co_ref, usc)
-    ### AJD edit to get state and county info
+    # AJD edit to get state and county info
     Co_per_NRMP_rec$STATE=fips[match(substr(Co_per_NRMP_rec$GEOID, start = 1, stop = 2),fips$state_code),"state_name"]
     Co_per_NRMP_rec$COUNTY=fips[match(Co_per_NRMP_rec$GEOID,fips$FIPS),"county"]
     Co_per_NRMP_rec$COUNTY=toupper(stringr::str_remove(Co_per_NRMP_rec$COUNTY," County"))
     
     
-    #Create Check County and State columns
-    
+    # Create Check County and State columns
     NRMP_Master$State_from_GPS <- toupper(Co_per_NRMP_rec$STATE)
     NRMP_Master$State_from_GPS <- gsub('[[:punct:] ]+',' ',NRMP_Master$State_from_GPS)
     
@@ -271,25 +273,25 @@ server <- function(input, output,session) {
     NRMP_Master$County_from_GPS <- gsub('[[:punct:] ]+',' ',NRMP_Master$County_from_GPS)
     
     
-    ### AJD Getting counts of correct state and county locations
+    # AJD Getting counts of correct state and county locations
     table(NRMP_Master$State_on_record==NRMP_Master$State_from_GPS)
     table(NRMP_Master$COUNTY==NRMP_Master$County_from_GPS)
     
-    ### AJD Check F01 error: Location in wrong state
-    NRMP_Master$F01=ifelse(NRMP_Master$State_on_record!=NRMP_Master$State_from_GPS&NRMP_Master$`LAT/LONRECORDED`=="YES",1,0)
-    ### AJD Check F02 error: Location in wrong county
-    NRMP_Master$F02=ifelse(NRMP_Master$COUNTY!=NRMP_Master$County_from_GPS&NRMP_Master$`LAT/LONRECORDED`=="YES",1,0)
+    # AJD Check N01 error: Location in wrong state
+    NRMP_Master$N01=ifelse(NRMP_Master$State_on_record!=NRMP_Master$State_from_GPS&NRMP_Master$`LAT/LONRECORDED`=="YES",1,0)
+    # AJD Check N02 error: Location in wrong county
+    NRMP_Master$N02=ifelse(NRMP_Master$COUNTY!=NRMP_Master$County_from_GPS&NRMP_Master$`LAT/LONRECORDED`=="YES",1,0)
     
-    table(NRMP_Master$F01)
-    table(NRMP_Master$F02)
+    table(NRMP_Master$N01)
+    table(NRMP_Master$N02)
     
     ######################################
     ###
     ### AJD Check Cities ####
     ###
     ######################################
-    ### You need to place a 1 in the City_Check file for your state if you would like the cities checked
-    ## Reverse Geocode coordinates to cities
+    # You need to place a 1 in the City_Check file for your state if you would like the cities checked
+    # Reverse Geocode coordinates to cities
     NRMP_Master$lat <- NRMP_Master$LATITUDE
     NRMP_Master$lon <- NRMP_Master$LONGITUDE
     
@@ -307,12 +309,12 @@ server <- function(input, output,session) {
     #   
     #   ###End Section 2
     #   
-    #   ##F03
+    #   ##N03
     #   ##Check if the town is correct
-    #   NRMP_Master$F03=ifelse(NRMP_Master$TOWN==NRMP_Master$ChCity,0,1)
-    #   NRMP_Master[which(is.na(NRMP_Master$F03)),"F03"]=1
+    #   NRMP_Master$N03=ifelse(NRMP_Master$TOWN==NRMP_Master$ChCity,0,1)
+    #   NRMP_Master[which(is.na(NRMP_Master$N03)),"N03"]=1
     #   
-    #   # In this version the NA values for F03 indicate that the Town information was not provided originally
+    #   # In this version the NA values for N03 indicate that the Town information was not provided originally
     #   ### End Check City ####
     #   
     # }
@@ -323,147 +325,160 @@ server <- function(input, output,session) {
     ### AJD Check for Method/Fate Errors 
     ###
     ######################################
+    NRMP_Master$N04=ifelse(grepl("CAGE TRAP|FIREARMS|HANDCAUGHT/GATHERED|LEG/FOOT HOLD TRAP|ROAD KILL|WS INCIDENTAL TAKE ",NRMP_Master$METHOD)& NRMP_Master$COLLECTOR!="WS",1,0)
+    NRMP_Master$N05=ifelse(NRMP_Master$COLLECTOR!="WS"&(NRMP_Master$FATE=="DIED UNDER CARE"|NRMP_Master$FATE=="EUTHANIZED"|NRMP_Master$FATE=="FOUND DEAD"|NRMP_Master$FATE=="NO FATE"|NRMP_Master$FATE=="OTHER"|NRMP_Master$FATE=="RELEASED"|NRMP_Master$FATE=="SAMPLED (WS TAKE)"),1,0)
+    NRMP_Master$N05a=ifelse(!is.na(NRMP_Master$OTHERCOLLECTOR)&(NRMP_Master$COLLECTOR!="OTHER"),1,0)
+    NRMP_Master$F05b=ifelse(NRMP_Master$COLLECTOR=="OTHER"&!is.na(NRMP_Master$COLLECTOR)&is.na(NRMP_Master$OTHERCOLLECTOR),1,0)
+    NRMP_Master$N06=ifelse(NRMP_Master$METHOD=="CAGE TRAP"& !grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|OTHER|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
+    NRMP_Master$N07=ifelse(NRMP_Master$METHOD=="HANDCAUGHT/GATHERED"&!grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|OTHER|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
+    NRMP_Master$N08=ifelse(NRMP_Master$METHOD=="LEG/FOOT HOLD TRAP"& !grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|OTHER|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
+    NRMP_Master$N09=ifelse(NRMP_Master$METHOD=="FIREARMS (SHOT)"& NRMP_Master$FATE!="EUTHANIZED",1,0)
+    NRMP_Master$N10=ifelse(NRMP_Master$METHOD=="NON-WS CARCASS COLLECTION"&NRMP_Master$FATE!="SAMPLED (NON-WS TAKE)",1,0)
+    NRMP_Master$N11=ifelse(NRMP_Master$METHOD=="NON-WS EUTHANIZED"&NRMP_Master$FATE!="SAMPLED (NON-WS TAKE)",1,0)
+    NRMP_Master$N12=ifelse(NRMP_Master$METHOD=="ROAD KILL"&NRMP_Master$FATE!="FOUND DEAD",1,0)
+    NRMP_Master$N13=ifelse(NRMP_Master$METHOD=="WS INCIDENTAL TAKE"&NRMP_Master$FATE!="SAMPLED (WS TAKE)",1,0)
+    NRMP_Master$N13a=ifelse(NRMP_Master$DENSITYSTUDY=="NO"&!is.na(NRMP_Master$DENSITYSTUDY)&!is.na(NRMP_Master$DENSITYID),1,0)
     
-    NRMP_Master$F04=ifelse(grepl("CAGE TRAP|FIREARMS|HANDCAUGHT/GATHERED|LEG/FOOT HOLD TRAP|ROAD KILL|WS INCIDENTAL TAKE ",NRMP_Master$METHOD)& NRMP_Master$COLLECTOR!="WS",1,0)
-    NRMP_Master$F05=ifelse(NRMP_Master$METHOD=="CAGE TRAP"& !grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|OTHER|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
-    NRMP_Master$F06=ifelse(NRMP_Master$METHOD=="HANDCAUGHT/GATHERED"&!grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|OTHER|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
-    NRMP_Master$F06b=ifelse(NRMP_Master$METHOD=="LEG/FOOT HOLD TRAP"& !grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|OTHER|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
-    NRMP_Master$F07=ifelse(NRMP_Master$METHOD=="FIREARMS (SHOT)"& NRMP_Master$FATE!="EUTHANIZED",1,0)
-    NRMP_Master$F08=ifelse(NRMP_Master$METHOD=="NON-WS CARCASS COLLECTION"&NRMP_Master$FATE!="SAMPLED (NON-WS TAKE)",1,0)
-    NRMP_Master$F09=ifelse(NRMP_Master$METHOD=="NON-WS EUTHANIZED"&NRMP_Master$FATE!="SAMPLED (NON-WS TAKE)",1,0)
-    NRMP_Master$F10=ifelse(NRMP_Master$METHOD=="ROAD KILL"&NRMP_Master$FATE!="FOUND DEAD",1,0)
-    NRMP_Master$F11=ifelse(NRMP_Master$METHOD=="WS INCIDENTAL TAKE"&NRMP_Master$FATE!="SAMPLED (WS TAKE)",1,0)
-    NRMP_Master$F12=ifelse(is.na(NRMP_Master$WHYEUTHANIZED)&NRMP_Master$FATE=="EUTHANIZED",1,0)
-    NRMP_Master$F13=ifelse(NRMP_Master$FATE=="OTHER",1,0)
-    NRMP_Master$F14=ifelse(NRMP_Master$FATE=="NO FATE"&NRMP_Master$SPECIES!="NO SPECIES",1,0)
-    
-    
-    ######################################
     ###
-    ### New checks based on chatting with Kathy
+    ### ORV issues
+    #
+    NRMP_Master$N15=ifelse(NRMP_Master$ORVNAIVE=="YES"&!is.na(NRMP_Master$DATELASTORV),1,0)
+    
+    # Error if ACTIVITY and ORVNAIVE don't match
+    NRMP_Master$N16=ifelse(NRMP_Master$ACTIVITY=="TRAPPING (ORV NAIVE)"&NRMP_Master$ORVNAIVE!="YES",1,0)
+    NRMP_Master$N16=ifelse(NRMP_Master$ACTIVITY=="TRAPPING (ORV POST-BAIT)"&NRMP_Master$ORVNAIVE!="NO",1,NRMP_Master$N16)
+    
+    # Error for negative days since last orv
+    NRMP_Master$N17=ifelse(NRMP_Master$DAYSPOSTBAIT<0,1,0)
+    NRMP_Master$N17[is.na(NRMP_Master$N17)]=0
+    
+    # Error for ORVNAIVE and bait type match
+    NRMP_Master$N18=ifelse(NRMP_Master$ORVNAIVE=="YES"&NRMP_Master$ORVBAITTYPE!="NONE (NAIVE)",1,0)
+    NRMP_Master$N18=ifelse(NRMP_Master$ORVNAIVE=="NO"&(is.na(NRMP_Master$ORVBAITTYPE)|NRMP_Master$ORVBAITTYPE=="NONE (NAIVE)"),1,NRMP_Master$N18)
+    NRMP_Master$N18=ifelse((!is.na(NRMP_Master$ORVBAITTYPE)|NRMP_Master$ORVBAITTYPE!="NONE (NAIVE)")&is.na(NRMP_Master$ORVNAIVE),1,NRMP_Master$N18)
+    NRMP_Master$N18[is.na(NRMP_Master$N18)]=0
+    
+    # Error for ORVNAIVE is no DATELASTORV must have a value
+    NRMP_Master$N19=ifelse(NRMP_Master$ORVNAIVE=="NO"&is.na(NRMP_Master$DATELASTORV),1,0)
+    NRMP_Master$N19[is.na(NRMP_Master$N19)]=0
+    
+    
     ###
-    ######################################
-    NRMP_Master$DATE2=as.POSIXct(NRMP_Master$DATE,"%Y-%m-%d")
-    NRMP_Master$DaysSinceCapture=as.numeric(difftime(Sys.Date(),NRMP_Master$DATE2,units="days"))
-    NRMP_Masterx=NRMP_Master[order(NRMP_Master$IDNUMBER,NRMP_Master$DATE),]
-    NRMP_Masterx$WasCaught=0
-    NRMP_Masterx$diffdat=0
-    idtab=table(NRMP_Masterx$IDNUMBER)
-    
-    
-    for(i in names(idtab[which(idtab>1)])){
-      nind=which(NRMP_Masterx$IDNUMBER==i)
-      ndat=NRMP_Masterx[nind,]
-      ndat=ndat[which(!is.na(ndat$DATE)),]
-      ndat$WasCaught[-1]=if_else_(ndat$RECAPTURE[-1]=="YES",0,1,missing=1)
-      ndat$diffdat=c(35,diff(ndat$DATE2,units="days"))
-      
-      ### Error for the if the animal was caught within the last 30 days but PROCESSED<30DAYSAGE is "NO"
-      ndat$F18=ifelse(ndat$diffdat<30&ndat$`PROCESSED<30DAYSAGO`=="NO",1,0)
-      
-      ### Error if an individual is called both a male and female at some point during its capture
-      ndat$F19=ifelse(any(ndat$SEX%in%c("MALE"))&any(ndat$SEX%in%c("FEMALE")),1,0)
-      
-      ### Error if an individual as the same ID and captured on the same day
-      ndat$F20[2]=ifelse(ndat$diffdat[2]==0,1,0)
-      
-      NRMP_Masterx[nind,]=ndat
-      
-    }
-    NRMP_Master=NRMP_Masterx[order(NRMP_Masterx$AmyID),]
-    
-    NRMP_Master$F19b=ifelse(NRMP_Master$LACTATION=="YES"&NRMP_Master$SEX!="FEMALE",1,0)
-    NRMP_Master$F19b[is.na(NRMP_Master$F19b)]=0
-    
-    ######################################
+    ### Target species issues
     ###
-    ### Adding in other Checks (68+ in Ethan's document)
-    ###
-    ######################################    
-    
-    table(NRMP_Master$PM1SAMPLE)
-    
-    ### Error if age is not filled in after a year and a sample was collected
-    NRMP_Master$F21=ifelse((NRMP_Master$PM1SAMPLE=="YES"|NRMP_Master$PM2SAMPLE=="YES"|NRMP_Master$K9SAMPLE=="YES"|NRMP_Master$JAWSAMPLE=="YES")&NRMP_Master$DaysSinceCapture>366&is.na(NRMP_Master$AGERECORDED)&is.na(NRMP_Master$AGE),1,0)
-    NRMP_Master$F21[is.na(NRMP_Master$F21)]=0
-    
-    ### Error if RABIESBRAINTEST is "NOT RECORDED" after a year and a BRAINSTEMSAMPLE is "YES"
-    NRMP_Master$F22=ifelse(NRMP_Master$BRAINSTEMSAMPLE=="YES"&!is.na(NRMP_Master$BRAINSTEMSAMPLE)&NRMP_Master$DaysSinceCapture>29,ifelse((NRMP_Master$RABIESBRAINTEST=="NOT RECORDED"),1,0),0)
-    
-    ### Error if RABIESVNA_IUML is "NOT RECORDED" after a year and a BLOODSAMPLE is "YES"
-    NRMP_Master$F23=ifelse(NRMP_Master$BLOODSAMPLE=="YES"&!is.na(NRMP_Master$BLOODSAMPLE)&NRMP_Master$DaysSinceCapture>366,ifelse(is.na(NRMP_Master$RABIESVNA_IUML),1,0),0)
-    
-    ### Error if RABIESBRAINTEST is "POSITIVE" and RABIESVARIANT is "AWAITING VARIANT TYPING"
-    NRMP_Master$F23b=ifelse(NRMP_Master$RABIESBRAINRESULTS=="POSITIVE"&NRMP_Master$DaysSinceCapture>29&NRMP_Master$RABIESVARIANT=="AWAITING VARIANT TYPING",1,0)
-    NRMP_Master$F23b[is.na(NRMP_Master$F23b)]=0
-    ### Error if OTHERSAMPLE is "YES" and OTHERSAMPLEEXPLAIN is blank
-    NRMP_Master$F24=ifelse(NRMP_Master$OTHERSAMPLE=="YES"&!is.na(NRMP_Master$OTHERSAMPLE)&is.na(NRMP_Master$OTHERSAMPLEEXPLAIN),1,
-                           ifelse(!is.na(NRMP_Master$OTHERSAMPLEEXPLAIN)&is.na(NRMP_Master$OTHERSAMPLE),1,0))
-    
-    ### Error if BLOODSAMPLE is "YES" and RABIESSERUM is blank
-    NRMP_Master$F25=ifelse(NRMP_Master$BLOODSAMPLE=="YES"&!is.na(NRMP_Master$BLOODSAMPLE)&is.na(NRMP_Master$RABIESSERUM),1,0)
-    
-    ### Error if HANDVACCINATED is "YES" and not drugs are provided
-    NRMP_Master$F26=ifelse(NRMP_Master$HANDVACCINATED=="YES"&!is.na(NRMP_Master$HANDVACCINATED)&(NRMP_Master$DRUG1APPLIED!="IMRAB3, RABIES VACCINE"|NRMP_Master$DRUG2APPLIED!="IMRAB3, RABIES VACCINE"|NRMP_Master$DRUG3APPLIED!="IMRAB3, RABIES VACCINE"),1,0)
-    NRMP_Master$F26=ifelse(NRMP_Master$HANDVACCINATED=="NO"&!is.na(NRMP_Master$HANDVACCINATED)&grepl("IMRAB3, RABIES VACCINE",paste(NRMP_Master$DRUG1APPLIED,NRMP_Master$DRUG2APPLIED,NRMP_Master$DRUG3APPLIED)),1,NRMP_Master$F26)
-    
-    ### Error in Raccoon WEIGHT
-    NRMP_Master$F27=ifelse(NRMP_Master$SPECIES=="RACCOONS"&!is.na(NRMP_Master$WEIGHT)&(NRMP_Master$WEIGHT<0.5|NRMP_Master$WEIGHT>20),1,0)
-    
-    ### Error if no weight is provided when WEIGHTRECORDED is "YES"
-    NRMP_Master$F28=ifelse(NRMP_Master$WEIGHTRECORDED=="YES"&!is.na(NRMP_Master$WEIGHTRECORDED)&is.na(NRMP_Master$WEIGHT),1,0)
-    
-    ### Error if juveniles are lactating
-    NRMP_Master$F29=ifelse(NRMP_Master$RELATIVEAGE=="JUVENILE (YOY)"&!is.na(NRMP_Master$RELATIVEAGE)&NRMP_Master$LACTATION=="YES"&!is.na(NRMP_Master$LACTATION),1,0)
-    
-    ### Error if MISTARGET is "INTENTIONAL and there is no value if it was collected within 30 days
-    NRMP_Master$F30=ifelse((NRMP_Master$METHOD=="CAGE TRAP"|NRMP_Master$METHOD=="HANDCAUGHT/GATHERED"|NRMP_Master$METHOD=="LEG/FOOT HOLD TRAP")&NRMP_Master$MISTARGET=="INTENTIONAL"&!is.na(NRMP_Master$MISTARGET)&is.na(NRMP_Master$`PROCESSED<30DAYSAGO`),1,0)
-    
-    ### Error if MISTARGET is "INTENTIONAL and RECAPTURE is blank
-    NRMP_Master$F31=ifelse((NRMP_Master$METHOD=="CAGE TRAP"|NRMP_Master$METHOD=="HANDCAUGHT/GATHERED"|NRMP_Master$METHOD=="LEG/FOOT HOLD TRAP")&NRMP_Master$MISTARGET=="INTENTIONAL"&!is.na(NRMP_Master$MISTARGET)&is.na(NRMP_Master$RECAPTURE),1,0)
-    
-    ### Error if DENSITYSTUDY is "NO" and DENSITYID has a value
-    NRMP_Master$F32=ifelse(NRMP_Master$DENSITYSTUDY=="NO"&!is.na(NRMP_Master$DENSITYSTUDY)&!is.na(NRMP_Master$DENSITYID),1,0)
-    
-    ### Error if OTHERCOLLECTOR is provided but COLLECTOR is not "OTHER"
-    NRMP_Master$F33=ifelse(!is.na(NRMP_Master$OTHERCOLLECTOR)&(NRMP_Master$COLLECTOR!="OTHER"),1,0)
-    
-    ### Error if the COLLETOR is not "WS" and METHOD or FATE are inappropriate
-    NRMP_Master$F34=ifelse(NRMP_Master$COLLECTOR!="WS"&(NRMP_Master$METHOD=="CAGE TRAP"|NRMP_Master$METHOD== "FIREARMS (SHOT)"|NRMP_Master$METHOD== "HANDCAUGHT/GATHERED"|NRMP_Master$METHOD=="LEG/FOOT HOLD TRAP"|NRMP_Master$METHOD=="ROAD KILL"|NRMP_Master$METHOD=="WS INCIDENTAL TAKE"),1,0)
-    NRMP_Master$F34=ifelse(NRMP_Master$COLLECTOR!="WS"&(NRMP_Master$FATE=="DIED UNDER CARE"|NRMP_Master$FATE=="EUTHANIZED"|NRMP_Master$FATE=="FOUND DEAD"|NRMP_Master$FATE=="NO FATE"|NRMP_Master$FATE=="OTHER"|NRMP_Master$FATE=="RELEASED"|NRMP_Master$FATE=="SAMPLED (WS TAKE)"),1,NRMP_Master$F34)
-    
-    ### Error if COLLECTOR is "OTHER" and the OTHERCOLLECTOR is blank
-    NRMP_Master$F35=ifelse(NRMP_Master$COLLECTOR=="OTHER"&!is.na(NRMP_Master$COLLECTOR)&is.na(NRMP_Master$OTHERCOLLECTOR),1,0)
-    
-    ### Error if BRAINSTEMTEST is "YES" and FATE is "RELEASED"
-    NRMP_Master$F36=ifelse(NRMP_Master$BRAINSTEMSAMPLE=="YES"&!is.na(NRMP_Master$BRAINSTEMSAMPLE)&NRMP_Master$FATE=="RELEASED",1,0)
-    
-    ### Error make sure TARGETSPECIES is a target species for NRMP,
+    # Error make sure TARGETSPECIES is a target species for NRMP,
     # Only check it when ACTIVITY = COORDINATED TVR or TRAPPING (ORV NAIVE) or TRAPPING (ORV POST-BAIT).  
     # Then, if SPECIES = BOBCATS or COYOTES or FOXES, GRAY or FOXES, RED or RACCOONS or SKUNKS, HOG-NOSED or SKUNKS, HOODED or SKUNKS, SPOTTED or SKUNKS, STRIPED, then TARGETSPECIES should be YES.  
     # For all other SPECIES except NO SPECIES, TARGETSPECIES should be NO.  For SPECIES = NO SPECIES, TARGETSPECIES should be NO CAPTURE.
     targetsps=c("BOBCATS","COYOTES","FOXES, GRAY","FOXES, RED","RACCOONS","SKUNKS, STRIPED","SKUNKS, SPOTTED","SKUNKS, HOG-NOSED","SKUNKS, HOODED")
+    NRMP_Master$N20=ifelse((NRMP_Master$ACTIVITY=="COORDINATED TVR"|NRMP_Master$ACTIVITY=="TRAPPING (ORV NAIVE)"|NRMP_Master$ACTIVITY=="TRAPPING (ORV POST-BAIT)")&NRMP_Master$SPECIES%in%targetsps&NRMP_Master$TARGETSPECIES!="YES",1,0)
+    NRMP_Master$N20=ifelse(!NRMP_Master$SPECIES%in%targetsps&NRMP_Master$SPECIES!="NO SPECIES"&NRMP_Master$TARGETSPECIES!="NO",1,NRMP_Master$N20)
     
-    NRMP_Master$F37=ifelse((NRMP_Master$ACTIVITY=="COORDINATED TVR"|NRMP_Master$ACTIVITY=="TRAPPING (ORV NAIVE)"|NRMP_Master$ACTIVITY=="TRAPPING (ORV POST-BAIT)")&NRMP_Master$SPECIES%in%targetsps&NRMP_Master$TARGETSPECIES!="YES",1,0)
-    NRMP_Master$F37=ifelse(!NRMP_Master$SPECIES%in%targetsps&NRMP_Master$SPECIES!="NO SPECIES"&NRMP_Master$TARGETSPECIES!="NO",1,NRMP_Master$F37)
+    # 
+    NRMP_Master$N20a=ifelse(NRMP_Master$TARGETSPECIES=="YES"&NRMP_Master$MISTARGET!="INTENTIONAL",1,0)
     
-    ### Error if ACTIVITY and ORVNAIVE don't match
-    NRMP_Master$F39=ifelse(NRMP_Master$ACTIVITY=="TRAPPING (ORV NAIVE)"&NRMP_Master$ORVNAIVE!="YES",1,0)
-    NRMP_Master$F39=ifelse(NRMP_Master$ACTIVITY=="TRAPPING (ORV POST-BAIT)"&NRMP_Master$ORVNAIVE!="NO",1,NRMP_Master$F39)
+    ###
+    ### Recapture process issues
+    ###
+    # Error if MISTARGET is "INTENTIONAL and RECAPTURE is blank
+    NRMP_Master$N21=ifelse((NRMP_Master$METHOD=="CAGE TRAP"|NRMP_Master$METHOD=="HANDCAUGHT/GATHERED"|NRMP_Master$METHOD=="LEG/FOOT HOLD TRAP")&NRMP_Master$MISTARGET=="INTENTIONAL"&!is.na(NRMP_Master$MISTARGET)&is.na(NRMP_Master$RECAPTURE),1,0)
+    # Error if MISTARGET is "INTENTIONAL and there is no value if it was collected within 30 days
+    NRMP_Master$N22=ifelse((NRMP_Master$METHOD=="CAGE TRAP"|NRMP_Master$METHOD=="HANDCAUGHT/GATHERED"|NRMP_Master$METHOD=="LEG/FOOT HOLD TRAP")&NRMP_Master$MISTARGET=="INTENTIONAL"&!is.na(NRMP_Master$MISTARGET)&is.na(NRMP_Master$`PROCESSED<30DAYSAGO`),1,0)
     
-    ### Error for negative days since last orv
-    NRMP_Master$F40=ifelse(NRMP_Master$DAYSPOSTBAIT<0,1,0)
-    NRMP_Master$F40[is.na(NRMP_Master$F40)]=0
     
-    ### Error for ORVNAIVE and bait type match
-    NRMP_Master$F41=ifelse(NRMP_Master$ORVNAIVE=="YES"&NRMP_Master$ORVBAITTYPE!="NONE (NAIVE)",1,0)
-    NRMP_Master$F41=ifelse(NRMP_Master$ORVNAIVE=="NO"&(is.na(NRMP_Master$ORVBAITTYPE)|NRMP_Master$ORVBAITTYPE=="NONE (NAIVE)"),1,NRMP_Master$F41)
-    NRMP_Master$F41=ifelse((!is.na(NRMP_Master$ORVBAITTYPE)|NRMP_Master$ORVBAITTYPE!="NONE (NAIVE)")&is.na(NRMP_Master$ORVNAIVE),1,NRMP_Master$F41)
-    NRMP_Master$F41[is.na(NRMP_Master$F41)]=0
+    ######################################
+    ###
+    ### Individual checks
+    ###
+    ######################################
+    NRMP_Master$DATE2=as.POSIXct(NRMP_Master$DATE,"%Y-%m-%d")
+    NRMP_Master$DaysSinceCapture=as.numeric(difftime(Sys.Date(),NRMP_Master$DATE2,units="days"))
+    NRMP_Master=NRMP_Master[order(NRMP_Master$STATE,NRMP_Master$IDNUMBER,NRMP_Master$DATE),]
+    NRMP_Master$WasCaught=0
+    NRMP_Master$diffdat=c(0,as.numeric(diff(NRMP_Master$DATE2,units="days"),units="days"))
     
-    ### Error for ORVNAIVE is no DATELASTORV must have a value
-    NRMP_Master$F42=ifelse(NRMP_Master$ORVNAIVE=="NO"&is.na(NRMP_Master$DATELASTORV),1,0)
-    NRMP_Master$F42[is.na(NRMP_Master$F42)]=0
+    NRMP_Master$IDState=paste(NRMP_Master$IDNUMBER,NRMP_Master$STATE,sep=".")
+    
+    # Indicator for first of ID series
+    NRMP_Master$t=sapply(1:nrow(NRMP_Master)-1,function(x)identical(NRMP_Master$IDState[x],NRMP_Master$IDState[x+1]))
+    NRMP_Master$diffdat=ifelse(NRMP_Master$t==FALSE,999,NRMP_Master$diffdat)
+    
+    # Error for the if the animal was caught within the last 30 days but PROCESSED<30DAYSAGE is "NO"
+    NRMP_Master$N23=ifelse(NRMP_Master$diffdat<30&NRMP_Master$`PROCESSED<30DAYSAGO`=="NO"&!is.na(NRMP_Master$`PROCESSED<30DAYSAGO`),1,0)
+    
+    # Making sure animals don't change species among captures
+    spcheck=tapply(NRMP_Master$SPECIES,NRMP_Master$IDState,function(x)length(unique(x))>1)
+    NRMP_Master$N24=0
+    NRMP_Master[which(NRMP_Master$IDState%in%names(spcheck[spcheck==TRUE])&!is.na(NRMP_Master$IDNUMBER)),"N24"]=1
+    
+    # Error if an individual is called both a male and female at some point during its capture
+    scheck=tapply(NRMP_Master$SEX,NRMP_Master$IDState,function(x)any(x%in%c("MALE"))&any(x%in%c("FEMALE")))
+    NRMP_Master$N25=0
+    NRMP_Master[which(NRMP_Master$IDState%in%names(scheck[scheck==TRUE])),"N25"]=1
+    
+    # Error if an individual as the same ID and captured on the same day
+    NRMP_Master$N26=ifelse(NRMP_Master$diffdat==0&!is.na(NRMP_Master$IDNUMBER),1,0)
+    
+    NRMP_Master=NRMP_Master[order(NRMP_Master$AmyID),]
+    NRMP_Master$N26a=ifelse(NRMP_Master$LACTATION=="YES"&NRMP_Master$SEX!="FEMALE",1,0)
+    NRMP_Master$N26a[is.na(NRMP_Master$N26a)]=0
+    
+    ###
+    ### More individual checkes
+    ###
+    # Error if juveniles are lactating
+    NRMP_Master$N27=ifelse(NRMP_Master$RELATIVEAGE=="JUVENILE (YOY)"&!is.na(NRMP_Master$RELATIVEAGE)&NRMP_Master$LACTATION=="YES"&!is.na(NRMP_Master$LACTATION),1,0)
+    
+    # Error if no weight is provided when WEIGHTRECORDED is "YES"
+    NRMP_Master$N27a=ifelse(NRMP_Master$WEIGHTRECORDED=="YES"&!is.na(NRMP_Master$WEIGHTRECORDED)&is.na(NRMP_Master$WEIGHT),1,0)
+    
+    # Error in Raccoon WEIGHT
+    NRMP_Master$N28=ifelse(NRMP_Master$SPECIES=="RACCOONS"&!is.na(NRMP_Master$WEIGHT)&(NRMP_Master$WEIGHT<0.5|NRMP_Master$WEIGHT>20),1,0)
+    
+    # Error if HANDVACCINATED is "YES" and not drugs are provided
+    NRMP_Master$N29=ifelse(NRMP_Master$HANDVACCINATED=="YES"&!is.na(NRMP_Master$HANDVACCINATED)&(NRMP_Master$DRUG1APPLIED!="IMRAB3, RABIES VACCINE"|NRMP_Master$DRUG2APPLIED!="IMRAB3, RABIES VACCINE"|NRMP_Master$DRUG3APPLIED!="IMRAB3, RABIES VACCINE"),1,0)
+    NRMP_Master$N29=ifelse(NRMP_Master$HANDVACCINATED=="NO"&!is.na(NRMP_Master$HANDVACCINATED)&grepl("IMRAB3, RABIES VACCINE",paste(NRMP_Master$DRUG1APPLIED,NRMP_Master$DRUG2APPLIED,NRMP_Master$DRUG3APPLIED)),1,NRMP_Master$N29)
+    
+    ###
+    ### Test result errors
+    ###
+    # Error if BLOODSAMPLE is "YES" and RABIESSERUM is blank
+    NRMP_Master$N30=ifelse(NRMP_Master$BLOODSAMPLE=="YES"&!is.na(NRMP_Master$BLOODSAMPLE)&is.na(NRMP_Master$RABIESSERUM),1,0)
+    
+    # Error if RABIESVNA_IUML is "NOT RECORDED" after a year and a BLOODSAMPLE is "YES"
+    NRMP_Master$N31=ifelse(NRMP_Master$BLOODSAMPLE=="YES"&!is.na(NRMP_Master$BLOODSAMPLE)&NRMP_Master$DaysSinceCapture>366,ifelse(is.na(NRMP_Master$RABIESVNA_IUML),1,0),0)
+    
+    # Error if age is not filled in after a year and a sample was collected
+    NRMP_Master$N32=ifelse((NRMP_Master$PM1SAMPLE=="YES"|NRMP_Master$PM2SAMPLE=="YES"|NRMP_Master$K9SAMPLE=="YES"|NRMP_Master$JAWSAMPLE=="YES")&NRMP_Master$DaysSinceCapture>366&is.na(NRMP_Master$AGERECORDED)&is.na(NRMP_Master$AGE),1,0)
+    NRMP_Master$N32[is.na(NRMP_Master$N32)]=0
+    
+    # Error if RABIESBRAINTEST is "NOT RECORDED" after a year and a BRAINSTEMSAMPLE is "YES"
+    NRMP_Master$N33=ifelse(NRMP_Master$BRAINSTEMSAMPLE=="YES"&!is.na(NRMP_Master$BRAINSTEMSAMPLE)&NRMP_Master$DaysSinceCapture>29,ifelse((NRMP_Master$RABIESBRAINTEST=="NOT RECORDED"),1,0),0)
+    
+    
+    
+    ###
+    ### Other checks
+    ###
+    # Error if OTHERSAMPLE is "YES" and OTHERSAMPLEEXPLAIN is blank
+    NRMP_Master$N33a=ifelse(NRMP_Master$OTHERSAMPLE=="YES"&is.na(NRMP_Master$OTHERSAMPLEEXPLAIN),1,
+                            ifelse(!is.na(NRMP_Master$OTHERSAMPLEEXPLAIN)&is.na(NRMP_Master$OTHERSAMPLE),1,0))
+    NRMP_Master$N33a[is.na(NRMP_Master$N33a)]=0
+    NRMP_Master$N33b=ifelse(is.na(NRMP_Master$WHYEUTHANIZED)&NRMP_Master$FATE=="EUTHANIZED",1,0)
+    NRMP_Master$N34=ifelse(NRMP_Master$FATE=="OTHER",1,0)
+    NRMP_Master$N35=ifelse(NRMP_Master$FATE=="NO FATE"&NRMP_Master$SPECIES!="NO SPECIES",1,0)
+    
+    # Error if BRAINSTEMTEST is "YES" and FATE is "RELEASED"
+    NRMP_Master$N35a=ifelse(NRMP_Master$BRAINSTEMSAMPLE=="YES"&!is.na(NRMP_Master$BRAINSTEMSAMPLE)&NRMP_Master$FATE=="RELEASED",1,0)
+    
+    # Error if RABIESBRAINTEST is "POSITIVE" and RABIESVARIANT is "AWAITING VARIANT TYPING"
+    NRMP_Master$N36=ifelse(NRMP_Master$RABIESBRAINRESULTS=="POSITIVE"&NRMP_Master$DaysSinceCapture>29&NRMP_Master$RABIESVARIANT=="AWAITING VARIANT TYPING",1,0)
+    NRMP_Master$N36[is.na(NRMP_Master$N36)]=0
+    
+    # Error if the VNA interpret does not match the IUML information
+    NRMP_Master$VNAvals=as.numeric(gsub("<|>|=",replacement = "",NRMP_Master$RABIESVNA_IUML))
+    NRMP_Master$N37=ifelse(grepl("<",NRMP_Master$RABIESVNA_IUML)&NRMP_Master$RABIESVNAINTERPRET!="NEGATIVE",1,0)
+    
     
     
     ######################################
@@ -495,8 +510,8 @@ server <- function(input, output,session) {
     }
     data <- data()
     
-    df=data[,c("IDNUMBER","LONGITUDE","LATITUDE","F02","SPECIES","COUNTY","STATE")]
-    loccols=c("black","red")[df$F02+1]
+    df=data[,c("IDNUMBER","LONGITUDE","LATITUDE","N02","SPECIES","COUNTY","STATE")]
+    loccols=c("black","red")[df$N02+1]
     
     xy <- df[,c("LONGITUDE","LATITUDE")]
     dfsp=SpatialPointsDataFrame(coords = xy, data = df,
@@ -562,13 +577,13 @@ server <- function(input, output,session) {
   
   output$tablex <- renderDataTable({
     data<-data()
-    badlocs=data[which(data$F02==1),c("IDNUMBER","SPECIES","County_on_record","State_on_record","County_from_GPS","State_from_GPS","LONGITUDE","LATITUDE")]
+    badlocs=data[which(data$N02==1),c("IDNUMBER","SPECIES","County_on_record","State_on_record","County_from_GPS","State_from_GPS","LONGITUDE","LATITUDE")]
     badlocs
   })
   
   output$stateerror <- renderValueBox({
     data<-data()
-    state.err=sum(data$F01,na.rm = TRUE)
+    state.err=sum(data$N01,na.rm = TRUE)
     valueBox(
       state.err, "Number of records with GPS-state mismatches", icon = icon("exclamation-triangle"),
       color = "orange"
@@ -577,7 +592,7 @@ server <- function(input, output,session) {
   
   output$countyerror <- renderValueBox({
     data<-data()
-    cty.err=sum(data$F02,na.rm = TRUE)
+    cty.err=sum(data$N02,na.rm = TRUE)
     valueBox(
       cty.err, "Number of records with GPS-county mismatches", icon = icon("exclamation-triangle"),
       color = "green"
@@ -591,17 +606,17 @@ server <- function(input, output,session) {
   ####
   output$RabiesResult<-renderPlot({
     data<-data()
-    sumres=data.frame(Errors=c("Rabies","Titer","Other"),Number=c(length(which(data$BRAINSTEMSAMPLE=="YES"))-sum(data$F22),
-                                                                  length(which(data$BLOODSAMPLE=="YES"))-sum(data$F23),
-                                                                  length(which(data$OTHERSAMPLE=="YES"))-sum(data$F24)),
-                      WithResults=c(sum(data$F22), sum(data$F23),sum(data$F24)))
+    sumres=data.frame(Errors=c("Rabies","Titer","Other"),Number=c(length(which(data$BRAINSTEMSAMPLE=="YES"))-sum(data$N33),
+                                                                  length(which(data$BLOODSAMPLE=="YES"))-sum(data$N31),
+                                                                  length(which(data$OTHERSAMPLE=="YES"))-sum(data$N33a)),
+                      WithResults=c(sum(data$N33), sum(data$N31),sum(data$N33a)))
     barplot(t(as.matrix(sumres[,-1])),names=sumres$Errors,xlab="Samples",ylab="Count",col=viridis(2))
     legend("topright",c("Completed results","Results needed"),fill=viridis(2))
   })
   
   output$rabiesissue <- renderValueBox({
     data<-data()
-    rab.err=sum(data$F22,na.rm = TRUE)
+    rab.err=sum(data$N33,na.rm = TRUE)
     valueBox(
       rab.err, "Number of records missing rabies results after a year", icon = icon("exclamation-triangle"),
       color = "red"
@@ -610,7 +625,7 @@ server <- function(input, output,session) {
   
   output$titerissue <- renderValueBox({
     data<-data()
-    tit.err=sum(data$F23,na.rm = TRUE)
+    tit.err=sum(data$N31,na.rm = TRUE)
     valueBox(
       tit.err, "Number of records missing titer results after a year", icon = icon("exclamation-triangle"),
       color = "green"
@@ -619,7 +634,7 @@ server <- function(input, output,session) {
   
   output$othersampissue <- renderValueBox({
     data<-data()
-    ct.err=sum(data$F24,na.rm = TRUE)
+    ct.err=sum(data$N33a,na.rm = TRUE)
     valueBox(
       ct.err, "Number of records missing results from other samples", icon = icon("exclamation-triangle"),
       color = "yellow"
@@ -702,7 +717,14 @@ server <- function(input, output,session) {
       paste(gsub("\\..*","",input$ersdata), "_withErrors.csv", sep="")
     },
     content = function(file) {
-      write.csv(data()[,c(1:data()$colnum[1],which(names(data())%in%c("State_on_record","State_from_GPS","County_on_record","County_from_GPS","Errors")))], file,row.names = FALSE,na="")
+      data=data()[,c(1:data()$colnum[1],which(names(data())%in%c("State_on_record","State_from_GPS","County_on_record","County_from_GPS","Errors")))]
+      
+      if(input$datatype=="MIS"){
+        write.csv(data, file,row.names = FALSE,na="")
+      }else{
+        names(data)=c(misdbf[match(names(data)[1:data()$colnum[1]],misdbf$MIS),"DBF.Uploader"],"State_on_record","State_from_GPS","County_on_record","County_from_GPS","Errors")
+        write.csv(data, file,row.names = FALSE,na="")
+      }      
     }
   )
   
