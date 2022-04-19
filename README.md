@@ -112,17 +112,20 @@ Select the type of data you will be uploading either MIS data or historic data f
 
 The app provides several tabs to visually explore issues with the data.  It is not necessary to examine these.  You can proceed directly to Step 6 and download the data with error codes.  The codes for the errors are provided on the "Error Definitions" tab.  You can download the PDF of the errors codes on your computer to get descriptions on the errors.  If you are interested in visualizing your data and associated errors click through the following tabs. 
 
-1. Location Check tab: This tab provides a map of MIS samples, the points are color coded and are red if the county in the MIS record does not match the county where the latitude/longitude data show the location. The map in interactive so you can soom in and out as needed.  Your curser will show the county it is hovering over.  If you click on any point it will show the animal ID number, the species, and the county on the MIS record for that individual.  There is also a table showing the samples with county location errors. Lastly, there is a summary box showing the number of location issues.
+1. Summary of Errors tab: This tab shows the summary of errors in the data both in a plot and table form.  It gives the number of each type of errors that is present in the data set.   This can be helpful to identify where common problems are in data reporting for your data set. 
 
-2. Rabies Check tab: This tab shows the number of samples that are awaiting results (either rabies results, titer results, or results from other samples) shown in yellow compared to the number of samples with test results provided, shown in purple. The summary boxes along the bottom show the number of results that are needed.  The errors for needing these samples to be filled in will only show after either 30 days (for rabies or rabies variant) or 1 year (for age or RVNA) has elapsed and no results are provided. 
+2. Location Check tab: This tab provides a map of MIS samples, the points are color coded and are red if the county in the MIS record does not match the county where the latitude/longitude data show the location. The map in interactive so you can soom in and out as needed.  Your curser will show the county it is hovering over.  If you click on any point it will show the animal ID number, the species, and the county on the MIS record for that individual.  There is also a table showing the samples with county location errors. Lastly, there is a summary box showing the number of location issues.
 
-3. Fate Check tab: This tab shows the distribution of different fate types in the data in a pie chart.  Also provided is a table of fate-method combinations.  This information is helpful as certain fate-method combinations should not occur and this can help point those out.
+3. Rabies Check tab: This tab shows the number of samples that are awaiting results (either rabies results, titer results, or results from other samples) shown in yellow compared to the number of samples with test results provided, shown in purple. The summary boxes along the bottom show the number of results that are needed.  The errors for needing these samples to be filled in will only show after either 30 days (for rabies or rabies variant) or 1 year (for age or RVNA) has elapsed and no results are provided. 
 
-4. Serology tab: This tab will only have information if there is serology information collected in the data set.  The box shows the number of samples with serology information. The figure shows the distribution of RVNA results (RVNA values) based on if they were classified as positive or negative. 
+4. Fate Check tab: This tab shows the distribution of different fate types in the data in a pie chart.  Also provided is a table of fate-method combinations.  This information is helpful as certain fate-method combinations should not occur and this can help point those out.
 
-5. Summary of Errors tab: This tab shows the summary of errors in the data both in a plot and table form.  It gives the number of each type of errors that is present in the data set.   This can be helpful to identify where common problems are in data reporting for your data set. 
+5. Serology tab: This tab will only have information if there is serology information collected in the data set.  The box shows the number of samples with serology information. The figure shows the distribution of RVNA results (RVNA values) based on if they were classified as positive or negative. 
 
 6. Error Definitions tab: This tab has a PDF table of error codes and their corresponding definitions.  This should be downloaded to your computer so help with data cleaning. 
+
+7. Method/Fate Scenarios tab: This tab has a PDF table of acceptable Method/Fate combinations.  This can be downloaded to your computer as a reference. 
+
 
 ### Step 6: Download the datafile with errors 
 
