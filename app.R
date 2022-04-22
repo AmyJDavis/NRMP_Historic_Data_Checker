@@ -5,7 +5,7 @@
 ### This app is targeted for examination of MIS data and the DBF uploader, 
 ###
 ### Amy J Davis
-### February 16, 2021, Updated December 6, 2021
+### February 16, 2021, Updated April 19, 2022
 ###
 ########################################################################
 ########################################################################
@@ -203,14 +203,13 @@ server <- function(input, output,session) {
     ### Change the names of the columns if the data came from the historical data checker
     if(input$datatype=="Historical"){
       NRMP_Masters$Last=NA
-      colind=match(misdbf$DBF.Uploader,names(NRMP_Masters))
-      colind[is.na(colind)]=which(names(NRMP_Masters)=="Last")
-      NRMP_Master=NRMP_Masters[,colind]
-      names(NRMP_Master)=misdbf$MIS
+      colind=match(names(NRMP_Masters),misdbf$DBF.Uploader)
+      NRMP_Master=NRMP_Masters
+      names(NRMP_Master)=ifelse(is.na(colind),names(NRMP_Masters),misdbf$MIS[colind])
     }else{
       NRMP_Master=NRMP_Masters
     }
-    NRMP_Master$colnum=dim(NRMP_Masters)[2]-1
+    NRMP_Master$column=dim(NRMP_Masters)[2]-1
     NRMP_Master$AmyID=1:dim(NRMP_Master)[1]
     # NRMP_Master=NRMP_Master[!is.na(NRMP_Master$STATE),]
     
@@ -449,7 +448,7 @@ server <- function(input, output,session) {
     NRMP_Master$N31=ifelse(NRMP_Master$BLOODSAMPLE=="YES"&!is.na(NRMP_Master$BLOODSAMPLE)&NRMP_Master$DaysSinceCapture>366,ifelse(is.na(NRMP_Master$RABIESVNA_IUML),1,0),0)
     
     # Error if age is not filled in after a year and a sample was collected
-    NRMP_Master$N32=ifelse((NRMP_Master$PM1SAMPLE=="YES"|NRMP_Master$PM2SAMPLE=="YES"|NRMP_Master$K9SAMPLE=="YES"|NRMP_Master$JAWSAMPLE=="YES")&NRMP_Master$DaysSinceCapture>366&is.na(NRMP_Master$AGERECORDED)&is.na(NRMP_Master$AGE),1,0)
+    NRMP_Master$N32=ifelse((NRMP_Master$PM1SAMPLE=="YES"|NRMP_Master$PM2SAMPLE=="YES"|NRMP_Master$K9SAMPLE=="YES"|NRMP_Master$JAWSAMPLE=="YES")&NRMP_Master$DaysSinceCapture>366&is.na(NRMP_Master$AGERECORDED),1,0)
     NRMP_Master$N32[is.na(NRMP_Master$N32)]=0
     
     # Error if RABIESBRAINTEST is "NOT RECORDED" after a year and a BRAINSTEMSAMPLE is "YES"
@@ -717,12 +716,12 @@ server <- function(input, output,session) {
       paste(gsub("\\..*","",input$ersdata), "_withErrors.csv", sep="")
     },
     content = function(file) {
-      data=data()[,c(1:data()$colnum[1],which(names(data())%in%c("State_on_record","State_from_GPS","County_on_record","County_from_GPS","Errors")))]
+      data=data()[,c(1:data()$column[1],which(names(data())%in%c("State_on_record","State_from_GPS","County_on_record","County_from_GPS","Errors")))]
       
       if(input$datatype=="MIS"){
         write.csv(data, file,row.names = FALSE,na="")
       }else{
-        names(data)=c(misdbf[match(names(data)[1:data()$colnum[1]],misdbf$MIS),"DBF.Uploader"],"State_on_record","State_from_GPS","County_on_record","County_from_GPS","Errors")
+        names(data)=c(misdbf[match(names(data)[1:data()$column[1]],misdbf$MIS),"DBF.Uploader"],"State_on_record","State_from_GPS","County_on_record","County_from_GPS","Errors")
         write.csv(data, file,row.names = FALSE,na="")
       }      
     }
