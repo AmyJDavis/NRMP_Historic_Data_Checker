@@ -101,7 +101,7 @@ ui <- dashboardPage(
     # in a page. It's not strictly necessary in this case, but
     # it's good practice.
     singleton(tags$head(tags$script(src = "message-handler.js"))),
-    tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"Use this file uploader to select the Excel file of the data you would like checked for errors.  The file needs to be in an Excel format (.xls or .xlsx) and should include the standard columns from either MIS output or the historical DBF Uploader. The column names must not be modified. Note: This file uploader can only handle file sizes of 30MB or less. The larger the file the longer it will take to check the data. If you are uploading a very large file, I recommend downloading the data with errors first before viewing other tabs. The Location Check tab in particular will take a long time to plot for large datasets.",align='left'),
+    tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"Use this file uploader to select the Excel file of the data you would like checked for errors. ",align='left'),
     tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"Select the data type then upload the file you want to check.  Then click the button to run the data checker",align='left'),
     ## User inputs or from our study
     radioButtons(inputId = "datatype",label="Is your data from MIS (most common) or the historical database (DBF uploader)?",
@@ -118,7 +118,38 @@ ui <- dashboardPage(
   # Show output
   dashboardBody(
     tabsetPanel(
-      tabPanel("Summary of Errors",
+      tabPanel("User Guide",icon=icon("info"),
+               box(width=12,title=span("How to use this data cleaning app",style="color:green;font-size:28px"),status="success",
+                   # 
+                   column(11,p("Welcome to the NRMP MIS and DBF data cleaning app.  This app was developed to help check for errors in data entry.  This app checks data from either MIS files or DBF uploader files.  ",style="font-size:130%;"),
+                          p("To use this app you will use the file uploader on the left panel to select the file you would like to check for errors.  The file needs to be in an Excel format (.xls or .xlsx). This file should either have the 94 columns from MIS output or the 107 columns from the DBF uploader. Select which type of data you are uploading then select the upload button. When these selections are complete, click the 'Run data checker' button.  Please note, this file uploader can only handle file sizes of 30MB or less. Larger files will take longer to check. Once your data has been checked, you can download your data file with error codes.  A PDF of the error codes and their descriptions can be found on the “Error definitions-PDF” tab. You should download this PDF as a reference for understand the errors.  If you have any questions about the definition of an error code, please contact Kathy Nelson (Kathleen.M.Nelson@usda.gov). ",style="font-size:130%;"), 
+                          p("By uploading the data and then downloading the data with errors, you can be done with this app.  However, we have provided additional tabs in this app to help visualize and understand some of the errors in your data.  The following is a description of the tabs in this app and how to use them.",style="font-size:130%;"),
+                          
+                          p("     •	",strong("Summary of Errors")," – This is a tab that summarizes the errors in your dataset.  There is a bar chart that shows the error codes and the number of records with those errors.  Then there is a table that tells you the number of error and provides a description of the errors.  This is a good reference to see what common issues are showing up in your data.",style="font-size:130%;"),
+                          p("     •	",strong("Location check")," – This tab checks the latitude and longitude information against the state and county information. The top shows a dashboard indicating the number of records that have a state/location mismatch and the number that have a county/location mismatch.  There is also an interactive map that lets you visually see the records that have a county/location mismatch (shown as red points).  As you scroll your curser over the map it will tell you which county your curser is in.  If you click on a point, an info box will pop up that tells you the record ID number, the species of that record, and the county that record says it is in. Below the map is a table of just the records that have a state or county mismatch with the location. Warning: If you are uploading a very large file, you may not want to try and visualize the map as it will take a long time to load. ",style="font-size:130%;"),
+                          p("     •	",strong("Method-Fate check")," – This tab shows a pivot-type table of all of the Method-Fate combinations where there was a Method-Fate error.  There are some Method-Fate combinations that are not allowed (see the Method/Fate Scenarios-PDF for details). By visualizing the data in this table you can see the combinations that are not allowed that are in your data. ",style="font-size:130%;"),
+                          p("     •	",strong("Sample Results Check")," – This tab shows the number of records that are missing sample result information.  If brain samples, blood samples, or teeth/jaw samples are collected then the results from those samples need to be filled in within a reasonable time period.  For RABIESBRAINRESULTS, a value needs to be entered within 30 days.  If it has been longer than that, an error will be indicated for that record.  For RABIESNVA_IUML, TTCC, and AGERECORDED results need to be provided within a year. ",style="font-size:130%;"),
+                          p("     •	",strong("Target Species Check")," – This tab shows a table of the species in your dataset and a count of the number that are recorded as target or non-target species if there is an error with the target species.  See Target Species-PDF tab to see which species should be considered target species.",style="font-size:130%;"),
+                          p("     •	",strong("Error Definitions-PDF ")," – This tab has a reference PDF that can be downloaded that explains the error codes and their definitions.  This is helpful when going through the downloaded data with error codes file.",style="font-size:130%;"),
+                          p("     •	",strong("Method/Fate Scenarios-PDF"),"  – This tab has a reference PDF that explains the Method-Fate combinations that are allowed in the data and why.  If you have an error with your Method-Fate combinations, this file will help you understand it.",style="font-size:130%;"),
+                          p("     •	",strong("Target Species-PDF")," – This tab has a reference PDF that explains which species should be considered target species. ",style="font-size:130%;"),
+                   )
+               ),
+               box(width=12,title=span("Trouble-shooting",style="color:green;font-size:28px"),status="success",
+                   # 
+                   column(11,p("",style="font-size:130%;"),
+                          p("We have tried to make this app as user-friendly as possible.  However, we know that issues may arise.  Here are some tips to help if you come across problems.   ",style="font-size:130%;"), 
+                          
+                          p("     •	",strong("Is there an error in your file upload? "),style="font-size:130%;"),
+                          p("          	----	Ensure you have the correct file extension. As mentioned above, this app accepts .xls and .xlsx files only.  There should be a warning if the file extension is incorrect. ",style="font-size:130%;"),
+                          p("           ----	If you export data directly from MIS it outputs the result with a .xls extension, however, the file is actually in html format.  If you see an error that says 'Unable to open file', you should open the file in Excel and click “Save As” and select .xls or .xlsx.  Then try uploading this new file to the data checker.  ",style="font-size:130%;"),
+                          p("     •	",strong("Did the file upload but there are no data checking results? "),style="font-size:130%;"),
+                          p("           ----	Ensure you have the correct column names. This app works based on the column names that are exported from MIS.  If these names have been modified, some of the data checking will not work.  Double check the column names if the file has uploaded fine, but no data checking is done.",style="font-size:130%;"),
+                          p("     •	",strong("Email Amy.J.Davis@usda.gov for other issues.  "),style="font-size:130%;")
+                   )
+               )
+      ),
+      tabPanel("Summary of Errors",icon = icon("bar-chart-o"),
                box(width=12,title=span("Summary of errors in the data",style="color:blue;font-size:28px"),status="success",
                    # varImp Plot
                    column(10,plotOutput('ErrorPlots'))
@@ -128,13 +159,11 @@ ui <- dashboardPage(
                    column(10,withSpinner(dataTableOutput(outputId="tableerror")))
                )
       ),
-      tabPanel("Location Check",
-               box(width=12,title=span("Map of MIS samples",style="color:blue;font-size:28px"),status="success",
-                   withSpinner(leafletOutput(outputId = "mapx"))
-                   
-               ),
-               box(width=12,title=span("Table of samples with county location errors",style="color:blue;font-size:28px"),status="success",
-                   dataTableOutput('tablex')
+      tabPanel("Location Check",icon = icon("map"),
+               box(width=12,title=span("Location check disclaimer",style="color:green;font-size:28px"),status="success",
+                   # 
+                   column(11,p("This location check determines if the latitude and longitude information corresponds to the same state and county as are on the data record.  Based on the map projection, points that are along county boundaries might suggest there is a discrepancy when there is not one (particularly along river boundaries). Use these errors as a guide to double check the locations. If you believe the location and county to be correct, then keep the record as is. ",style="font-size:130%;"),
+                   )
                ),
                fluidRow(
                  box(width=12,title=span("Summary of location issues",style="color:blue;font-size:28px"),status="success",
@@ -143,13 +172,31 @@ ui <- dashboardPage(
                      valueBoxOutput("stateerror"),
                      valueBoxOutput("countyerror")
                  )
+               ),
+               box(width=12,title=span("Map of MIS samples",style="color:blue;font-size:28px"),status="success",
+                   withSpinner(leafletOutput(outputId = "mapx"))
+                   
+               ),
+               box(width=12,title=span("Table of samples with county location errors",style="color:blue;font-size:28px"),status="success",
+                   dataTableOutput('tablex')
                )
                
-      ),      
-      tabPanel("Rabies Check",
-               box(width=12,title=span("Proportion of samples with rabies results",style="color:blue;font-size:28px"),status="success",
-                   column(10,plotOutput('RabiesResult')),
-                   column(6,HTML("The error for results not provided will only show if it has been more than 30 days for rabies or variant typing or more than a year for age and RVNA results since the sample was collected, allowing time for the laboratory results to come back. "))   
+      ),  
+      tabPanel("Method-Fate Check",icon = icon("bar-chart-o"),
+               box(width=12,title=span("How to interpret this table",style="color:green;font-size:28px"),status="success",
+                   # 
+                   column(11,p("This table shows all Method-Fate combinations in your dataset that involved an error (N06-N13).  See the Method/Fate Scenarios-PDF for more details. If no table displays then you don't have any Method-Fate issues in your dataset.",style="font-size:130%;")
+                   )
+               ),
+               box(width=12,title=span("METHOD-FATE combinations",style="color:blue;font-size:28px"),status="success",
+                   #confusion matrix, model accuracy metrics
+                   column(8,withSpinner(dataTableOutput(outputId="tablefate"))))
+      ),  
+      tabPanel("Sample Results Check",icon = icon("bar-chart-o"),
+               box(width=12,title=span("Sample results summaries",style="color:green;font-size:28px"),status="success",
+                   # 
+                   column(11,p("This tab shows a summary of how many records that had brain, blood, or teeth samples collected are missing results after a reasonable period of time.",style="font-size:130%;"),
+                   )
                ),
                fluidRow(
                  box(width=12,title=span("Summary of test result issues",style="color:blue;font-size:28px"),status="success",
@@ -158,30 +205,22 @@ ui <- dashboardPage(
                      valueBoxOutput("othersampissue"))
                )
       ),
+      tabPanel("Target Species Check",icon = icon("bar-chart-o"),
+               box(width=12,title=span("NRMP target species and MIS target",style="color:blue;font-size:28px"),status="success",
+                   column(11,p("This table shows the species and if the animal was designated as a target species.  Only data with errors are shown (N20). See NRMP Target Species and MIS Target.pdf for more detail. If no table displays there are no Target Species issues in your dataset.",style="font-size:130%;")),
+                   
+                   column(8,withSpinner(dataTableOutput(outputId="targetsps"))))
+      ),
       
-      tabPanel("Fate Check",
-               box(width=12,title=span("Distribution of different FATE types",style="color:blue;font-size:28px"),status="success",
-                   # varImp Plot
-                   column(6,plotOutput('FateResult'))
-               ),
-               box(width=12,title=span("FATE-METHOD combinations",style="color:blue;font-size:28px"),status="success",
-                   #confusion matrix, model accuracy metrics
-                   column(8,withSpinner(dataTableOutput(outputId="tablefate"))))
-      ),
-      tabPanel("Serology Check",
-               box(width=12,title=span("Serology Information",style="color:blue;font-size:28px"),status="success",
-                   valueBoxOutput("serologyinfo")),
-               box(width=12,title=span("Distribution of RVNA results by interpretation",style="color:blue;font-size:28px"),status="success",
-                   # varImp Plot
-                   column(6,plotOutput('VNAresult'))
-               )
-      ),
-      tabPanel("Error Definitions",
+      tabPanel("Error Definitions-PDF",icon = icon("fa-solid fa-file-pdf"),
+               tags$iframe(style="height:1000px; width:100%; scrolling=yes; color:blue", 
+                           src="DataCheckingErrorCodes.pdf")),
+      tabPanel("Method/Fate Scenarios-PDF",icon = icon("fa-solid fa-file-pdf"),
                tags$iframe(style="height:1000px; width:100%; scrolling=yes", 
-                           src="DataCheckingErrorCodesAll.pdf")),
-      tabPanel("Method/Fate Scenarios",
+                           src="scenarios.pdf")),
+      tabPanel("Target Species-PDF",icon = icon("fa-solid fa-file-pdf"),
                tags$iframe(style="height:1000px; width:100%; scrolling=yes", 
-                           src="scenarios.pdf"))
+                           src="NRMP Target Species and MIS Target.pdf"))
     )
   )
 )
@@ -448,7 +487,7 @@ server <- function(input, output,session) {
     NRMP_Master$N31=ifelse(NRMP_Master$BLOODSAMPLE=="YES"&!is.na(NRMP_Master$BLOODSAMPLE)&NRMP_Master$DaysSinceCapture>366,ifelse(is.na(NRMP_Master$RABIESVNA_IUML),1,0),0)
     
     # Error if age is not filled in after a year and a sample was collected
-    NRMP_Master$N32=ifelse((NRMP_Master$PM1SAMPLE=="YES"|NRMP_Master$PM2SAMPLE=="YES"|NRMP_Master$K9SAMPLE=="YES"|NRMP_Master$JAWSAMPLE=="YES")&NRMP_Master$DaysSinceCapture>366&is.na(NRMP_Master$AGERECORDED),1,0)
+    NRMP_Master$N32=ifelse((NRMP_Master$PM1SAMPLE=="YES"|NRMP_Master$PM2SAMPLE=="YES"|NRMP_Master$K9SAMPLE=="YES"|NRMP_Master$JAWSAMPLE=="YES")&NRMP_Master$DaysSinceCapture>366&(is.na(NRMP_Master$AGERECORDED)|is.na(NRMP_Master$TTCC)),1,0)
     NRMP_Master$N32[is.na(NRMP_Master$N32)]=0
     
     # Error if RABIESBRAINTEST is "NOT RECORDED" after a year and a BRAINSTEMSAMPLE is "YES"
@@ -495,6 +534,10 @@ server <- function(input, output,session) {
     hm2=lapply(hm,names)
     NRMP_Master$Errors=do.call('rbind',lapply(hm2,paste,collapse=";"))
     
+    ### Make lat/longs zeros NA values
+    NRMP_Master$LATITUDE[NRMP_Master$LATITUDE==0]=NA
+    NRMP_Master$LONGITUDE[NRMP_Master$LONGITUDE==0]=NA
+    
     NRMP_Master
     
   })
@@ -510,6 +553,7 @@ server <- function(input, output,session) {
     data <- data()
     
     df=data[,c("IDNUMBER","LONGITUDE","LATITUDE","N02","SPECIES","COUNTY","STATE")]
+    df=df[which(!is.na(df$LONGITUDE)),]
     loccols=c("black","red")[df$N02+1]
     
     xy <- df[,c("LONGITUDE","LATITUDE")]
@@ -576,7 +620,7 @@ server <- function(input, output,session) {
   
   output$tablex <- renderDataTable({
     data<-data()
-    badlocs=data[which(data$N02==1),c("IDNUMBER","SPECIES","County_on_record","State_on_record","County_from_GPS","State_from_GPS","LONGITUDE","LATITUDE")]
+    badlocs=data[which(data$N02==1),c("DATE","IDNUMBER","SPECIES","LATITUDE","LONGITUDE","State_on_record","County_on_record","State_from_GPS","County_from_GPS")]
     badlocs
   })
   
@@ -601,7 +645,7 @@ server <- function(input, output,session) {
   
   
   ####
-  ### Rabies results tab info
+  ### Sample Results tab info
   ####
   output$RabiesResult<-renderPlot({
     data<-data()
@@ -617,7 +661,7 @@ server <- function(input, output,session) {
     data<-data()
     rab.err=sum(data$N33,na.rm = TRUE)
     valueBox(
-      rab.err, "Number of records missing rabies results after a year", icon = icon("exclamation-triangle"),
+      rab.err, "Number of missing RABIESBRAINRESULTS after 30 days", icon = icon("exclamation-triangle"),
       color = "red"
     )
   })
@@ -626,7 +670,7 @@ server <- function(input, output,session) {
     data<-data()
     tit.err=sum(data$N31,na.rm = TRUE)
     valueBox(
-      tit.err, "Number of records missing titer results after a year", icon = icon("exclamation-triangle"),
+      tit.err, "Number of missing RABIESVNA_IUML results after a year", icon = icon("exclamation-triangle"),
       color = "green"
     )
   }) 
@@ -635,50 +679,28 @@ server <- function(input, output,session) {
     data<-data()
     ct.err=sum(data$N33a,na.rm = TRUE)
     valueBox(
-      ct.err, "Number of records missing results from other samples", icon = icon("exclamation-triangle"),
+      ct.err, "Number of missing AGERECORDED or TTCC results after a year", icon = icon("exclamation-triangle"),
       color = "yellow"
     )
   })
   
   
-  
   ####
-  ### Fate tab info
+  ### Method-fate tab info
   ####
-  
-  output$FateResult<-renderPlot({
-    data<-data()
-    pie(table(data$FATE),col=viridis(5),cex=1.3)
-  })
   
   output$tablefate <- renderDataTable({
     data<-data()
-    fatecoltab=data.frame(table(data$FATE,data$COLLECTOR))
-    names(fatecoltab)=c("Fate","Collector","Freq")
-    fcts=dcast(fatecoltab,Fate~Collector)
+    data1=data[which(data$N06==1|data$N07==1|data$N08==1|data$N09==1|data$N10==1|data$N11==1|data$N12==1|data$N13),]
+    
+    fatecoltab=data.frame(table(data1$METHOD,data1$FATE))
+    names(fatecoltab)=c("Method","Fate","Freq")
+    fcts=dcast(fatecoltab,Method~Fate)
     fcts
   })
   
-  ####
-  #### VNA results info tab
-  ####
-  output$serologyinfo <- renderValueBox({
-    data<-data()
-    rab.err=length(which(!is.na(data$VNAvals)))
-    valueBox(
-      rab.err, "Number of records with serology results", icon = icon("chart-bar"),
-      color = "red"
-    )
-  })
   
-  output$VNAresult<-renderPlot({
-    data<-data()
-    nmax=max(data$VNAvals,na.rm=TRUE)
-    h1=hist(data$VNAvals[data$RABIESVNAINTERPRET=="NEGATIVE"],breaks=seq(0,nmax,0.05), col=rgb(1,0,0,0.5),xlab="RVNA IUML",main="Histogram of RVNA results")
-    h2=hist(data$VNAvals[data$RABIESVNAINTERPRET=="POSITIVE"],breaks=seq(0,nmax,0.05),col=rgb(0,0,1,0.5), add=TRUE)
-    legend("topright",legend = c("NEGATIVE","POSITIVE"),fill = c(rgb(1,0,0,0.5),rgb(0,0,1,0.5)))
-    
-  })
+  
   
   ####
   ### Error tab info
@@ -708,6 +730,16 @@ server <- function(input, output,session) {
     errsum=data.frame(Error_ID=Fix_Comments$ErrorCode,Count=colSums(data[,which(names(data)%in%Fix_Comments$ErrorCode)],na.rm = TRUE),Error=Fix_Comments$Description)
     errsum=errsum[which(errsum$Count>0),]
     data.table(errsum)
+  })
+  
+  ### Target species tab
+  output$targetsps <- renderDataTable({
+    data<-data()
+    data1=data[which(data$N20==1,),]
+    spstab=data.frame(table(data1$SPECIES,data1$TARGETSPECIES))
+    names(spstab)=c("Species","Target_Species","Freq")
+    scts=dcast(spstab,Species~Target_Species)
+    scts
   })
   
   ### Download data button information
