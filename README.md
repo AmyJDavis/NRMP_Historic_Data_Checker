@@ -26,6 +26,8 @@ The following files need to be saved to a folder on your computer that will serv
    e) scenarios.pdf
    
    f) NRMP Target Species and MIS Target.pdf
+   
+   g) Check.png
 
 
 ## Step by Step to Launch App From R
