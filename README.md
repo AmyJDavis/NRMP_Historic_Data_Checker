@@ -15,13 +15,17 @@ The following files need to be saved to a folder on your computer that will serv
 1. app.R - This is the R code you will need to open in R via RStudio to run the shiny app (used in Step 4) 
 2. www - You will need to have a folder within your working direction named 'www'.  The following files need to be within the www folder.
 
-   a)	DataCheckingErrors.xls
+   a)	DataCheckingErrorsCodesAll.xls
    
-   b) MIS_DBF_colnames.csv
+   b)	DataCheckingErrorsCodesAll.pdf
    
-   c)	DataCheckingErrors.pdf
+   c) MIS_DBF_colnames.csv
    
    d)	USDA_bw_transparent.png 
+   
+   e) scenarios.pdf
+   
+   f) NRMP Target Species and MIS Target.pdf
 
 
 ## Step by Step to Launch App From R
