@@ -5,12 +5,12 @@ Below is a step by step guide on how to open and use the NRMP Data Cleaning App 
 
 ## Direct link to App
 
- https://ajdavis.shinyapps.io/mis_datacheck_publish/  
+https://amyjdavis.shinyapps.io/nrmp_historic_data_checker/ 
  - The link above takes you directly to the app and works as a normal webpage. This is a reasonable option for access. However, there is a threshold on how many users can utilize the app through the link and may be slower. The faster and more stable way to access the app is by running it through R (described below). 
 
 ## Files included
 
-The following files need to be saved to a folder on your computer that will serve as the working directory. From the main repository page for the "NRMP_Historic_Data_Checker" on the right hand side there should be a section called "Releases".  If you click on that, you can download a zip or tar.gz file of all of the files in this repository.  Specifically to run the app you will need: 
+The following files need to be saved to a folder on your computer that will serve as the working directory. From the main repository page for the "NRMP_Historic_Data_Checker" on the right hand side there should be a section called "Releases".  Click on 'Releases' and then select the most recent release. From here you can download a zip or tar.gz file of all of the files in this repository.  Specifically to run the app you will need: 
 
 1. app.R - This is the R code you will need to open in R via RStudio to run the shiny app (used in Step 4) 
 2. www - You will need to have a folder within your working direction named 'www'.  The following files need to be within the www folder.
@@ -26,7 +26,7 @@ The following files need to be saved to a folder on your computer that will serv
 
 ## Step by Step to Launch App From R
 
-### Step 1: Download R and RStudio (if both are already installed proceed to Step 2)
+### Step 1: You need to have R and RStudio on your computer, if you down't yet then download R and RStudio (if both are already installed proceed to Step 2)
 
 - Submit an IT ticket requesting to have R and R Studio (latest versions) installed. R can be installed without administrative privileges as long as it is saved under My Documents and not Programs.  
 
@@ -103,7 +103,7 @@ Open the file "app.R" in RStudio. You can do this be selecting File -> Open File
 
 #### NRMP Data Cleaning App should open in your web browser
 
-![alt text](https://github.com/AmyJDavis/NRMP_Historic_Data_Checker/blob/main/NRMP%20MIS%20DBF%20Data%20Cleaning%20App.png?raw=true)  
+![alt text](https://github.com/AmyJDavis/NRMP_Historic_Data_Checker/blob/main/MISDBF.png?raw=true)  
 Image 1. Home screen of NRMP MIS Data Cleaning App.
 
 ### Step 5: Select and add dataset to shiny app
@@ -112,19 +112,15 @@ Select the type of data you will be uploading either MIS data or historic data f
 
 The app provides several tabs to visually explore issues with the data.  It is not necessary to examine these.  You can proceed directly to Step 6 and download the data with error codes.  The codes for the errors are provided on the "Error Definitions" tab.  You can download the PDF of the errors codes on your computer to get descriptions on the errors.  If you are interested in visualizing your data and associated errors click through the following tabs. 
 
-1. Summary of Errors tab: This tab shows the summary of errors in the data both in a plot and table form.  It gives the number of each type of errors that is present in the data set.   This can be helpful to identify where common problems are in data reporting for your data set. 
-
-2. Location Check tab: This tab provides a map of MIS samples, the points are color coded and are red if the county in the MIS record does not match the county where the latitude/longitude data show the location. The map in interactive so you can soom in and out as needed.  Your curser will show the county it is hovering over.  If you click on any point it will show the animal ID number, the species, and the county on the MIS record for that individual.  There is also a table showing the samples with county location errors. Lastly, there is a summary box showing the number of location issues.
-
-3. Rabies Check tab: This tab shows the number of samples that are awaiting results (either rabies results, titer results, or results from other samples) shown in yellow compared to the number of samples with test results provided, shown in purple. The summary boxes along the bottom show the number of results that are needed.  The errors for needing these samples to be filled in will only show after either 30 days (for rabies or rabies variant) or 1 year (for age or RVNA) has elapsed and no results are provided. 
-
-4. Fate Check tab: This tab shows the distribution of different fate types in the data in a pie chart.  Also provided is a table of fate-method combinations.  This information is helpful as certain fate-method combinations should not occur and this can help point those out.
-
-5. Serology tab: This tab will only have information if there is serology information collected in the data set.  The box shows the number of samples with serology information. The figure shows the distribution of RVNA results (RVNA values) based on if they were classified as positive or negative. 
-
-6. Error Definitions tab: This tab has a PDF table of error codes and their corresponding definitions.  This should be downloaded to your computer so help with data cleaning. 
-
-7. Method/Fate Scenarios tab: This tab has a PDF table of acceptable Method/Fate combinations.  This can be downloaded to your computer as a reference. 
+1. User Guide - This tab provides a user guide for this app and section on trouble shooting.
+2. Summary of Errors – This is a tab that summarizes the errors in your dataset.  There is a bar chart that shows the error codes and the number of records with those errors.  Then there is a table that tells you the number of error and provides a description of the errors.  This is a good reference to see what common issues are showing up in your data.
+3. Location check – This tab checks the latitude and longitude information against the state and county information. The top shows a dashboard indicating the number of records that have a state/location mismatch and the number that have a county/location mismatch.  There is also an interactive map that lets you visually see the records that have a county/location mismatch (shown as red points).  As you scroll your curser over the map it will tell you which county your curser is in.  If you click on a point, an info box will pop up that tells you the record ID number, the species of that record, and the county that record says it is in. Below the map is a table of just the records that have a state or county mismatch with the location. Warning: If you are uploading a very large file, you may not want to try and visualize the map as it will take a long time to load.
+4. Method-Fate check – This tab shows a pivot-type table of all of the Method-Fate combinations in your data.  There are some Method-Fate combinations that are not allowed (see the Method/Fate Scenarios-PDF for details). By visualizing the data in this table you can see if you have any combinations that are not allowed. 
+5. Sample Results Check – This tab shows the number of records that are missing sample result information.  If brain samples, blood samples, or teeth/jaw samples are collected then the results from those samples need to be filled in within a reasonable time period.  For RABIESBRAINRESULTS, a value needs to be entered within 30 days.  If it has been longer than that, an error will be indicated for that record.  For RABIESNVA_IUML, TTCC, and AGERECORDED results need to be provided within a year. 
+6. Target Species Check – This tab shows a table of the species in your dataset and a count of the number that are recorded as target or non-target species.  See Target Species-PDF tab to see which species should be considered target species.
+7. Error Definitions-PDF – This tab has a reference PDF that can be downloaded that explains the error codes and their definitions.  This is helpful when going through the downloaded data with error codes file.
+8. Method/Fate Scenarios-PDF – This tab has a reference PDF that explains the Method-Fate combinations that are allowed in the data and why.  If you have an error with your Method-Fate combinations, this file will help you understand it.
+9. Target Species-PDF – This tab has a reference PDF that explains which species should be considered target species. 
 
 
 ### Step 6: Download the datafile with errors 
