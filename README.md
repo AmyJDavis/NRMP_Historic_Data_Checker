@@ -103,7 +103,7 @@ Open the file "app.R" in RStudio. You can do this be selecting File -> Open File
 
 #### NRMP Data Cleaning App should open in your web browser
 
-![alt text](https://github.com/AmyJDavis/NRMP_Historic_Data_Checker/blob/main/MISDBF.png?raw=true)  
+![alt text](https://github.com/AmyJDavis/NRMP_Historic_Data_Checker/blob/main/MISDBF.PNG?raw=true)  
 Image 1. Home screen of NRMP MIS Data Cleaning App.
 
 ### Step 5: Select and add dataset to shiny app
