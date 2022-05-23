@@ -50,10 +50,10 @@ library(sf)
 
 get_popup_content <- function(dfsp) {
   paste0(
-    "<b>ID: ", dfsp@data$IDNUMBER, "</b>",
+    "<b>ID: ", dfsp$IDNUMBER, "</b>",
     "<br>",
-    "<br>Species: ", dfsp@data$SPECIES,
-    "<br>County in record: ", dfsp@data$COUNTY  )
+    "<br>Species: ", dfsp$SPECIES,
+    "<br>County in record: ", dfsp$COUNTY  )
 }
 
 # Options for Spinner
@@ -68,7 +68,7 @@ misdbf=read.csv("www/MIS_DBF_colnames.csv")
 ### County information
 stfp <- 1:56
 stfp <- stfp[-c(2,3,7,14,15,43,52)]
-countiesx <- tigris::counties(state = stfp, cb=TRUE)
+uscd=tigris::counties(state=stfp,cb = TRUE, resolution = '20m')
 
 
 # Define UI f
@@ -213,7 +213,7 @@ ui <- dashboardPage(
       
       tabPanel("Error Definitions-PDF",icon = icon("fa-solid fa-file-pdf"),
                tags$iframe(style="height:1000px; width:100%; scrolling=yes; color:blue", 
-                           src="DataCheckingErrorCodes.pdf")),
+                           src="DataCheckingErrorCodesAll.pdf")),
       tabPanel("Method/Fate Scenarios-PDF",icon = icon("fa-solid fa-file-pdf"),
                tags$iframe(style="height:1000px; width:100%; scrolling=yes", 
                            src="scenarios.pdf")),
@@ -276,8 +276,6 @@ server <- function(input, output,session) {
     NRMP_Master$lon=ifelse(is.na(NRMP_Master$LONGITUDE),0,NRMP_Master$LONGITUDE)
     
     # To get county polygon data frame information
-    uscd=tigris::counties(state=stfp,cb = TRUE)
-    
     pnts_sf <- st_as_sf(NRMP_Master, coords = c('lon', 'lat'), crs = st_crs(uscd))
     
     pnts <- pnts_sf %>% mutate(
@@ -522,8 +520,7 @@ server <- function(input, output,session) {
     loccols=c("black","red")[df$N02+1]
     
     xy <- df[,c("LONGITUDE","LATITUDE")]
-    dfsp=SpatialPointsDataFrame(coords = xy, data = df,
-                                proj4string = CRS("+proj=longlat +datum=NAD83 +no_defs"))
+    dfsp=st_as_sf(df,coords = c('LONGITUDE', 'LATITUDE'),crs = ("+proj=longlat +datum=NAD83 +no_defs"))
     
     # Create leaflet
     lngmin=min(df$LONGITUDE[df$LONGITUDE<0],na.rm = TRUE)
@@ -553,7 +550,7 @@ server <- function(input, output,session) {
                         icon=awesomeIcons(
                           library = "ion",  # the ion set of icons
                           icon = ifelse(  # conditional icon
-                            test = dfsp@data$SPECIES == "RACCOONS",
+                            test = dfsp$SPECIES == "RACCOONS",
                             yes = "ion-arrow-down-b",  # primary gets a down arrow
                             no = "ion-arrow-up-b"  # up arrows for secondary schools
                           ),
@@ -570,14 +567,12 @@ server <- function(input, output,session) {
                            position = 'topleft',
                            group = 'Vertical Legend')
     
-    addPolygons(map=l2,data = countiesx, 
+    addPolygons(map=l2,data = uscd, 
                 color = "blue",
                 fillOpacity = 0,
                 weight  = 1,
                 layerId = ~COUNTYNS,
-                label = paste(countiesx$NAME, " County"))
-    
-    
+                label = paste(uscd$NAME, " County"))
     
     
   })
