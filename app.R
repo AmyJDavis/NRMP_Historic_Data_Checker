@@ -30,12 +30,10 @@ library(DT)
 library(leaflet)
 library(leaflegend)
 library(readxl)
-library(raster)
 library(tidyverse)
 library(tigris)
 library(shinycssloaders)
 library(htmltools)
-library(rgdal)
 library(reshape2)
 library(viridis)
 library(data.table)
@@ -47,6 +45,7 @@ library(shinydashboard)
 library(pwr)
 library(shinyWidgets)
 library(hablar)
+library(sf)
 
 
 get_popup_content <- function(dfsp) {
@@ -120,32 +119,32 @@ ui <- dashboardPage(
     tabsetPanel(
       tabPanel("User Guide",icon=icon("info"),
                box(width=12,title=span("How to use this data cleaning app",style="color:green;font-size:28px"),status="success",
-                   column(8,p("Welcome to the NRMP MIS data cleaning app.  This app was developed to help check for errors in data entry.  Historically, this data checking was done by hand by NRMP staff. By automating this task, now rabies biologists as well as NRMP staff can check for data errors in their own data. ",style="font-size:130%;"),
-                          p("To use this app you will use the file uploader on the left panel to select the file you would like to check for errors.  The file needs to be in an Excel format (.xls or .xlsx) and should include the 94 columns from MIS output. The column names must also match MIS output. Please note, this file uploader can only handle file sizes of 30MB or less. Larger files will take longer to check. Once your data has been checked, you can download to your computer your data file with error codes.  A PDF of the error codes and their descriptions can be found on the “Error definitions-PDF” tab. You should download this PDF as a reference for understand the errors.  If you have any questions about the definition of an error code, please contact Kathy Nelson (Kathleen.M.Nelson@usda.gov). ",style="font-size:130%;"), 
-                          p("By uploading the data and then downloading the data with errors, you can be done with this app.  However, we have provided additional tabs in this app to help visualize and understand some of the errors in your data.  The following is a description of the tabs in this app and how to use them.",style="font-size:130%;")),
+                   column(8,p("Welcome to the NRMP MIS data cleaning app. This app was developed to help check for errors in data entry from MIS or from historical DBF uploader. Historically, this data checking was done by hand by NRMP staff. By automating this task, now rabies field staff (as well as NRMP) can check for errors in their own data.",style="font-size:130%;"),
+                          p("To start this app use the file uploader on the left panel to browse (and select) the file you would like to check for errors. Select if this file is in the MIS format or the DBF format. The file needs to be in an Excel format (.xls or .xlsx) and must include the 94 columns from an MIS output (data dump). The column names must also match the MIS data dump or the DBF uploader. Please note, this file uploader can only handle file sizes of 30MB or less. Larger files will take longer to check than smaller files. Once you have selected your file and chosen if the file is MIS or DBF, you can click on the “Run data checker” button to check the data. When the data has been checked, you can click the “Download data with errors” button to save a file to your computer.  This will produce a csv file you can open in Excel.  The farthest right column will be the error codes. A pdf of the error codes and their descriptions can be found on the “Error Definitions-PDF” tab. You should download this pdf as a reference for understanding the errors. If you have any questions about the definition of an error code, please contact Kathy Nelson (Kathleen.M.Nelson@usda.gov).",style="font-size:130%;"), 
+                          p("You can be done with this app by simply uploading your data and then downloading the data with errors. However, we have provided additional tabs in this app to help you visualize and understand some of the errors in your data. Below are descriptions of the tabs and how to use them.",style="font-size:130%;")),
                    column(4,withSpinner(plotOutput(outputId = "datadone"))),
                    column(11,        
-                          p("     •	",strong("Summary of Errors")," – This is a tab that summarizes the errors in your dataset.  There is a bar chart that shows the error codes and the number of records with those errors.  Then there is a table that tells you the number of error and provides a description of the errors.  This is a good reference to see what common issues are showing up in your data.",style="font-size:130%;"),
-                          p("     •	",strong("Location check")," – This tab checks the latitude and longitude information against the state and county information. The top shows a dashboard indicating the number of records that have a state/location mismatch and the number that have a county/location mismatch.  There is also an interactive map that lets you visually see the records that have a county/location mismatch (shown as red points).  As you scroll your curser over the map it will tell you which county your curser is in.  If you click on a point, an info box will pop up that tells you the record ID number, the species of that record, and the county that record says it is in. Below the map is a table of just the records that have a state or county mismatch with the location. Warning: If you are uploading a very large file, you may not want to try and visualize the map as it will take a long time to load. ",style="font-size:130%;"),
-                          p("     •	",strong("Method-Fate check")," – This tab shows a pivot-type table of all of the Method-Fate combinations where there was a Method-Fate error.  There are some Method-Fate combinations that are not allowed (see the Method/Fate Scenarios-PDF for details). By visualizing the data in this table you can see the combinations that are not allowed that are in your data. ",style="font-size:130%;"),
-                          p("     •	",strong("Sample Results Check")," – This tab shows the number of records that are missing sample result information.  If brain samples, blood samples, or teeth/jaw samples are collected then the results from those samples need to be filled in within a reasonable time period.  For RABIESBRAINRESULTS, a value needs to be entered within 30 days.  If it has been longer than that, an error will be indicated for that record.  For RABIESNVA_IUML, TTCC, and AGERECORDED results need to be provided within a year. ",style="font-size:130%;"),
-                          p("     •	",strong("Target Species Check")," – This tab shows a table of the species in your dataset and a count of the number that are recorded as target or non-target species if there is an error with the target species.  See Target Species-PDF tab to see which species should be considered target species.",style="font-size:130%;"),
-                          p("     •	",strong("Error Definitions-PDF ")," – This tab has a reference PDF that can be downloaded that explains the error codes and their definitions.  This is helpful when going through the downloaded data with error codes file.",style="font-size:130%;"),
-                          p("     •	",strong("Method/Fate Scenarios-PDF"),"  – This tab has a reference PDF that explains the Method-Fate combinations that are allowed in the data and why.  If you have an error with your Method-Fate combinations, this file will help you understand it.",style="font-size:130%;"),
-                          p("     •	",strong("Target Species-PDF")," – This tab has a reference PDF that explains which species should be considered target species. ",style="font-size:130%;"),
+                          p("     •	",strong("Summary of Errors")," – This is a tab that summarizes the errors in your dataset. There is a bar chart that shows the error codes and the number of records with those errors. Then there is a table that tells you the number of errors and provides a description of the errors. This is a good reference to see what common issues are showing up in your data.",style="font-size:130%;"),
+                          p("     •	",strong("Location Check")," – This tab checks the LATITUDE and LONGITUDE on your MIS record against the STATE and COUNTY information. The top shows a dashboard indicating the number of records that have a state/location mismatch and the number that have a county/location mismatch. There is also an interactive map that lets you see the records with a county/location mismatch (shown as red points). As you scroll over the map it will tell you which county your cursor is in. If you click on a point, an info box will pop up that tells you the IDNUMBER, SPECIES, and COUNTY shown on that MIS record. Below the map is a table of just the records that have a state or county mismatch with the location. Warning: If you are uploading a very large file, you may not want to try and visualize the map as it will take a long time to load.",style="font-size:130%;"),
+                          p("     •	",strong("Method-Fate Check")," – This tab shows a pivot-type table of all of the METHOD-FATE combination errors. There are some combinations that are not allowed (see the “Method/Fate Scenarios-PDF” tab for details). By visualizing the data in this table, you can see the bad combinations (errors) in your data. ",style="font-size:130%;"),
+                          p("     •	",strong("Sample Results Check")," – This tab shows the number of records that are missing sample result information. If brain, blood, or teeth/jaw samples are collected then the results from those samples need to be filled in within a reasonable time period. For RABIESBRAINRESULTS, a value needs to be entered within 30 days. If it has been longer than that, an error will be indicated for that record. For RABIESNVA_IUML, TTCC, and AGERECORDED results need to be provided within a year.  We understand that sometimes CDC, Wadsworth and Matson’s take longer than 365 days to return our results, but this error acts as a reminder for you as well.",style="font-size:130%;"),
+                          p("     •	",strong("Target Species Check")," – This tab shows a table of errors between the SPECIES and TARGETSPECIES (Yes or No).  The count shown in the table is the number of records with that error. See the “Target Species-PDF” tab to see which species should be considered target species.",style="font-size:130%;"),
+                          p("     •	",strong("Error Definitions-PDF ")," – This tab has a pdf that explains the error codes and their definitions.  You should download this pdf as a reference. This is helpful when going through the downloaded csv file that contains your data with error codes (farthest right column).",style="font-size:130%;"),
+                          p("     •	",strong("Method/Fate Scenarios-PDF"),"  – – This tab has a reference pdf that explains the Method-Fate combinations that are allowed in the data and why. If you have an error with your Method-Fate combinations, this file will help you understand it.",style="font-size:130%;"),
+                          p("     •	",strong("Target Species-PDF")," – This tab has a reference pdf that explains which species should be considered target species and how they relate to the MISTARGET field.",style="font-size:130%;"),
                    )
                ),
                box(width=12,title=span("Trouble-shooting",style="color:green;font-size:28px"),status="success",
                    # 
                    column(11,p("",style="font-size:130%;"),
-                          p("We have tried to make this app as user-friendly as possible.  However, we know that issues may arise.  Here are some tips to help if you come across problems.   ",style="font-size:130%;"), 
+                          p("We have tried to make this app as user-friendly as possible. However, we know that issues may arise. Here are some tips to help solve problems you may encounter. ",style="font-size:130%;"), 
                           
-                          p("     •	",strong("Is there an error in your file upload? "),style="font-size:130%;"),
-                          p("          	----	Ensure you have the correct file extension. As mentioned above, this app accepts .xls and .xlsx files only.  There should be a warning if the file extension is incorrect. ",style="font-size:130%;"),
-                          p("           ----	If you export data directly from MIS it outputs the result with a .xls extension, however, the file is actually in html format.  If you see an error that says 'Unable to open file', you should open the file in Excel and click “Save As” and select .xls or .xlsx.  Then try uploading this new file to the data checker.  ",style="font-size:130%;"),
+                          p("     •	",strong("Is there something wrong with the file you uploaded?"),style="font-size:130%;"),
+                          p("          	----	Ensure you have the correct file extension. As mentioned above, this app accepts .xls and .xlsx files only. There should be a warning if the file extension is incorrect. ",style="font-size:130%;"),
+                          p("           ----	When you dump data from MIS it outputs the result with an .html extension that looks and feels like Excel (but it’s not Excel). If you see an error in this app when trying to upload that says 'Unable to open file', you should open the file in Excel and click “Save As” and select .xls or .xlsx. Then try uploading this new file to the data cleaning app. ",style="font-size:130%;"),
                           p("     •	",strong("Did the file upload but there are no data checking results? "),style="font-size:130%;"),
-                          p("           ----	Ensure you have the correct column names. This app works based on the column names that are exported from MIS.  If these names have been modified, some of the data checking will not work.  Double check the column names if the file has uploaded fine, but no data checking is done.",style="font-size:130%;"),
-                          p("     •	",strong("Email Amy.J.Davis@usda.gov for other issues.  "),style="font-size:130%;")
+                          p("           ----	Ensure you have the correct column names in your uploaded file. This app works based on the column names that are dumped from MIS. If these names have been modified, some of the data checking will not work. Double check the column names if the file has uploaded fine, but no data checking is done.",style="font-size:130%;"),
+                          p("     •	",strong("Email Kathleen.M.Nelson@usda.gov for other issues. "),style="font-size:130%;")
                    )
                )
       ),
@@ -273,89 +272,29 @@ server <- function(input, output,session) {
     fips <- fips_codes
     fips$FIPS=paste(fips$state_code,fips$county_code,sep="")
     NRMP_Master$State_on_record=toupper(fips[match(NRMP_Master$STATE,fips$state),"state_name"])
+    NRMP_Master$lat=ifelse(is.na(NRMP_Master$LATITUDE),0,NRMP_Master$LATITUDE)
+    NRMP_Master$lon=ifelse(is.na(NRMP_Master$LONGITUDE),0,NRMP_Master$LONGITUDE)
     
-    # AJD edit to get county polygon data frame information
+    # To get county polygon data frame information
     uscd=tigris::counties(state=stfp,cb = TRUE)
-    uscsf=uscd$geometry
-    uscs=as(uscsf,"Spatial")
-    # Extract polygon ID's
-    pid <- sapply(slot(uscs, "polygons"), function(x) slot(x, "ID"))
-    # Create dataframe with correct rownames
-    p.df <- data.frame( GEOID=uscd$GEOID, row.names = pid)
-    usc=SpatialPolygonsDataFrame(uscs,data = p.df)
-    # Define coordinate system for NRMP data and pull coordinate system from tigris counties file
-    usc_crs <- proj4string(usc)
-    NRMP_crs <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84")
-    # Get NRMP and usc ready for over()
-    NRMP_Master$LONGITUDE[is.na(NRMP_Master$LONGITUDE)] <- 0
-    NRMP_Master$LATITUDE[is.na(NRMP_Master$LATITUDE)] <- 0
     
-    NRMP_locs=NRMP_Master[,c("IDNUMBER","LONGITUDE","LATITUDE")]
-    coordinates(NRMP_locs) <- c('LONGITUDE', 'LATITUDE')
-    proj4string(NRMP_locs) <- usc_crs
-    NRMP_Co_ref <- spTransform(NRMP_locs, usc_crs)
-    # Perform over()
-    Co_per_NRMP_rec <- over(NRMP_Co_ref, usc)
-    # AJD edit to get state and county info
-    Co_per_NRMP_rec$STATE=fips[match(substr(Co_per_NRMP_rec$GEOID, start = 1, stop = 2),fips$state_code),"state_name"]
-    Co_per_NRMP_rec$COUNTY=fips[match(Co_per_NRMP_rec$GEOID,fips$FIPS),"county"]
-    Co_per_NRMP_rec$COUNTY=toupper(stringr::str_remove(Co_per_NRMP_rec$COUNTY," County"))
+    pnts_sf <- st_as_sf(NRMP_Master, coords = c('lon', 'lat'), crs = st_crs(uscd))
     
+    pnts <- pnts_sf %>% mutate(
+      intersection = as.integer(st_intersects(geometry, uscd)),
+      County_on_record=COUNTY,
+      County_from_GPS = gsub('[[:punct:] ]+',' ',toupper(if_else(is.na(intersection), '', uscd$NAME[intersection]))),
+      State_from_GPS = toupper(if_else(is.na(intersection), '', uscd$STATE_NAME[intersection])),
+    ) 
     
-    # Create Check County and State columns
-    NRMP_Master$State_from_GPS <- toupper(Co_per_NRMP_rec$STATE)
-    NRMP_Master$State_from_GPS <- gsub('[[:punct:] ]+',' ',NRMP_Master$State_from_GPS)
+    NRMP_Master=pnts %>% st_drop_geometry()
     
-    NRMP_Master$County_on_record <- NRMP_Master$COUNTY
-    NRMP_Master$County_from_GPS <- Co_per_NRMP_rec$COUNTY
-    NRMP_Master$County_from_GPS <- gsub('[[:punct:] ]+',' ',NRMP_Master$County_from_GPS)
-    
-    
-    # AJD Getting counts of correct state and county locations
-    table(NRMP_Master$State_on_record==NRMP_Master$State_from_GPS)
-    table(NRMP_Master$COUNTY==NRMP_Master$County_from_GPS)
-    
-    # AJD Check N01 error: Location in wrong state
     NRMP_Master$N01=ifelse(NRMP_Master$State_on_record!=NRMP_Master$State_from_GPS&NRMP_Master$`LAT/LONRECORDED`=="YES",1,0)
-    # AJD Check N02 error: Location in wrong county
-    NRMP_Master$N02=ifelse(NRMP_Master$COUNTY!=NRMP_Master$County_from_GPS&NRMP_Master$`LAT/LONRECORDED`=="YES",1,0)
+    NRMP_Master$N02=ifelse(str_remove(NRMP_Master$COUNTY," CITY")!=NRMP_Master$County_from_GPS&NRMP_Master$`LAT/LONRECORDED`=="YES",1,0)
     
     table(NRMP_Master$N01)
     table(NRMP_Master$N02)
     
-    ######################################
-    ###
-    ### AJD Check Cities ####
-    ###
-    ######################################
-    # You need to place a 1 in the City_Check file for your state if you would like the cities checked
-    # Reverse Geocode coordinates to cities
-    NRMP_Master$lat <- NRMP_Master$LATITUDE
-    NRMP_Master$lon <- NRMP_Master$LONGITUDE
-    
-    # if(input$checkcity==TRUE){
-    #   NRMP_Master$ChCitySelect = (City_Check[match(NRMP_Master$STATE,City_Check$State),1])$Select
-    #   NRMP_Master$ChCity <- ""
-    #   
-    #   ####Pick Section 1 or Section 2 to turn on
-    #   ###Section 1
-    #   citycheckind=intersect(intersect(which(!is.na(NRMP_Master$TOWN)),which(!is.na(NRMP_Master$LONGITUDE))),which(NRMP_Master$ChCitySelect == 1))
-    #   city_per_NRMP_rec=apply(NRMP_Master[citycheckind,],1,function(x)revgeo(x[which(names(NRMP_Master)=="lon")],x[which(names(NRMP_Master)=="lat")], provider =  'photon', API = NULL, output = 'frame', item = 'city'))
-    #   NRMP_Master[citycheckind,"ChCity"] <- toupper(as.character(sapply(city_per_NRMP_rec,function(x)x$city)))
-    #   
-    #   NRMP_Master$ChCity=ifelse(NRMP_Master$ChCity=="CITY NOT FOUND",NA,NRMP_Master$ChCity)
-    #   
-    #   ###End Section 2
-    #   
-    #   ##N03
-    #   ##Check if the town is correct
-    #   NRMP_Master$N03=ifelse(NRMP_Master$TOWN==NRMP_Master$ChCity,0,1)
-    #   NRMP_Master[which(is.na(NRMP_Master$N03)),"N03"]=1
-    #   
-    #   # In this version the NA values for N03 indicate that the Town information was not provided originally
-    #   ### End Check City ####
-    #   
-    # }
     
     
     ######################################
@@ -381,7 +320,6 @@ server <- function(input, output,session) {
     ### ORV issues
     #
     NRMP_Master$N15=ifelse(NRMP_Master$ORVNAIVE=="YES"&!is.na(NRMP_Master$DATELASTORV),1,0)
-    
     # Error if ACTIVITY and ORVNAIVE don't match
     NRMP_Master$N16=ifelse(NRMP_Master$ACTIVITY=="TRAPPING (ORV NAIVE)"&NRMP_Master$ORVNAIVE!="YES",1,0)
     NRMP_Master$N16=ifelse(NRMP_Master$ACTIVITY=="TRAPPING (ORV POST-BAIT)"&NRMP_Master$ORVNAIVE!="NO",1,NRMP_Master$N16)
@@ -448,11 +386,13 @@ server <- function(input, output,session) {
     spcheck=tapply(NRMP_Master$SPECIES,NRMP_Master$IDState,function(x)length(unique(x))>1)
     NRMP_Master$N24=0
     NRMP_Master[which(NRMP_Master$IDState%in%names(spcheck[spcheck==TRUE])&!is.na(NRMP_Master$IDNUMBER)),"N24"]=1
+    NRMP_Master$N24=ifelse(is.na(NRMP_Master$IDNUMBER),0,NRMP_Master$N24)
     
     # Error if an individual is called both a male and female at some point during its capture
     scheck=tapply(NRMP_Master$SEX,NRMP_Master$IDState,function(x)any(x%in%c("MALE"))&any(x%in%c("FEMALE")))
     NRMP_Master$N25=0
     NRMP_Master[which(NRMP_Master$IDState%in%names(scheck[scheck==TRUE])),"N25"]=1
+    NRMP_Master$N25=ifelse(is.na(NRMP_Master$IDNUMBER),0,NRMP_Master$N25)
     
     # Error if an individual as the same ID and captured on the same day
     NRMP_Master$N26=ifelse(NRMP_Master$diffdat==0&!is.na(NRMP_Master$IDNUMBER),1,0)
@@ -461,8 +401,12 @@ server <- function(input, output,session) {
     NRMP_Master$N26a=ifelse(NRMP_Master$LACTATION=="YES"&NRMP_Master$SEX!="FEMALE",1,0)
     NRMP_Master$N26a[is.na(NRMP_Master$N26a)]=0
     
+    NRMP_Master=NRMP_Master[order(NRMP_Master$AmyID),]
+    NRMP_Master$N26a=ifelse(NRMP_Master$LACTATION=="YES"&NRMP_Master$SEX!="FEMALE",1,0)
+    NRMP_Master$N26a[is.na(NRMP_Master$N26a)]=0
+    
     ###
-    ### More individual checkes
+    ### More individual checks
     ###
     # Error if juveniles are lactating
     NRMP_Master$N27=ifelse(NRMP_Master$RELATIVEAGE=="JUVENILE (YOY)"&!is.na(NRMP_Master$RELATIVEAGE)&NRMP_Master$LACTATION=="YES"&!is.na(NRMP_Master$LACTATION),1,0)
@@ -474,8 +418,9 @@ server <- function(input, output,session) {
     NRMP_Master$N28=ifelse(NRMP_Master$SPECIES=="RACCOONS"&!is.na(NRMP_Master$WEIGHT)&(NRMP_Master$WEIGHT<0.5|NRMP_Master$WEIGHT>20),1,0)
     
     # Error if HANDVACCINATED is "YES" and not drugs are provided
-    NRMP_Master$N29=ifelse(NRMP_Master$HANDVACCINATED=="YES"&!is.na(NRMP_Master$HANDVACCINATED)&(NRMP_Master$DRUG1APPLIED!="IMRAB3, RABIES VACCINE"|NRMP_Master$DRUG2APPLIED!="IMRAB3, RABIES VACCINE"|NRMP_Master$DRUG3APPLIED!="IMRAB3, RABIES VACCINE"),1,0)
-    NRMP_Master$N29=ifelse(NRMP_Master$HANDVACCINATED=="NO"&!is.na(NRMP_Master$HANDVACCINATED)&grepl("IMRAB3, RABIES VACCINE",paste(NRMP_Master$DRUG1APPLIED,NRMP_Master$DRUG2APPLIED,NRMP_Master$DRUG3APPLIED)),1,NRMP_Master$N29)
+    drugs=paste(NRMP_Master$DRUG1APPLIED,NRMP_Master$DRUG2APPLIED,NRMP_Master$DRUG3APPLIED,sep=";")
+    NRMP_Master$N29=ifelse(NRMP_Master$HANDVACCINATED=="YES"&!is.na(NRMP_Master$HANDVACCINATED)&(!grepl("IMRAB3, RABIES VACCINE",drugs)),1,0)
+    NRMP_Master$N29=ifelse(NRMP_Master$HANDVACCINATED=="NO"&!is.na(NRMP_Master$HANDVACCINATED)&grepl("IMRAB3, RABIES VACCINE",drugs),1,NRMP_Master$N29)
     
     ###
     ### Test result errors
@@ -487,7 +432,7 @@ server <- function(input, output,session) {
     NRMP_Master$N31=ifelse(NRMP_Master$BLOODSAMPLE=="YES"&!is.na(NRMP_Master$BLOODSAMPLE)&NRMP_Master$DaysSinceCapture>366,ifelse(is.na(NRMP_Master$RABIESVNA_IUML),1,0),0)
     
     # Error if age is not filled in after a year and a sample was collected
-    NRMP_Master$N32=ifelse((NRMP_Master$PM1SAMPLE=="YES"|NRMP_Master$PM2SAMPLE=="YES"|NRMP_Master$K9SAMPLE=="YES"|NRMP_Master$JAWSAMPLE=="YES")&NRMP_Master$DaysSinceCapture>366&(is.na(NRMP_Master$AGERECORDED)|is.na(NRMP_Master$TTCC)),1,0)
+    NRMP_Master$N32=ifelse((NRMP_Master$PM1SAMPLE=="YES"|NRMP_Master$PM2SAMPLE=="YES"|NRMP_Master$K9SAMPLE=="YES"|NRMP_Master$JAWSAMPLE=="YES")&NRMP_Master$DaysSinceCapture>366&is.na(NRMP_Master$AGERECORDED),1,0)
     NRMP_Master$N32[is.na(NRMP_Master$N32)]=0
     
     # Error if RABIESBRAINTEST is "NOT RECORDED" after a year and a BRAINSTEMSAMPLE is "YES"
