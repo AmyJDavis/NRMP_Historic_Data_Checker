@@ -68,7 +68,7 @@ misdbf=read.csv("www/MIS_DBF_colnames.csv")
 ### County information
 stfp <- 1:56
 stfp <- stfp[-c(2,3,7,14,15,43,52)]
-uscd=tigris::counties(state=stfp,cb = TRUE, resolution = '20m')
+uscd=tigris::counties(state=stfp,cb = TRUE)
 
 
 # Define UI f
