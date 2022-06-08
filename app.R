@@ -271,7 +271,7 @@ server <- function(input, output,session) {
     
     fips <- fips_codes
     fips$FIPS=paste(fips$state_code,fips$county_code,sep="")
-    NRMP_Master$State_on_record=toupper(fips[match(NRMP_Master$STATE,fips$state),"state_name"])
+    NRMP_Master$MIS_State=toupper(fips[match(NRMP_Master$STATE,fips$state),"state_name"])
     NRMP_Master$lat=ifelse(is.na(NRMP_Master$LATITUDE),0,NRMP_Master$LATITUDE)
     NRMP_Master$lon=ifelse(is.na(NRMP_Master$LONGITUDE),0,NRMP_Master$LONGITUDE)
     
@@ -280,15 +280,15 @@ server <- function(input, output,session) {
     
     pnts <- pnts_sf %>% mutate(
       intersection = as.integer(st_intersects(geometry, uscd)),
-      County_on_record=COUNTY,
-      County_from_GPS = gsub('[[:punct:] ]+',' ',toupper(if_else(is.na(intersection), '', uscd$NAME[intersection]))),
-      State_from_GPS = toupper(if_else(is.na(intersection), '', uscd$STATE_NAME[intersection])),
+      LATLON_State = toupper(if_else(is.na(intersection), '', uscd$STATE_NAME[intersection])),
+      MIS_County=COUNTY,
+      LATLON_County = gsub('[[:punct:] ]+',' ',toupper(if_else(is.na(intersection), '', uscd$NAME[intersection]))),
     ) 
     
     NRMP_Master=pnts %>% st_drop_geometry()
     
-    NRMP_Master$N01=ifelse(NRMP_Master$State_on_record!=NRMP_Master$State_from_GPS&NRMP_Master$`LAT/LONRECORDED`=="YES",1,0)
-    NRMP_Master$N02=ifelse(str_remove(NRMP_Master$COUNTY," CITY")!=NRMP_Master$County_from_GPS&NRMP_Master$`LAT/LONRECORDED`=="YES",1,0)
+    NRMP_Master$N01=ifelse(NRMP_Master$MIS_State!=NRMP_Master$LATLON_State&NRMP_Master$`LAT/LONRECORDED`=="YES",1,0)
+    NRMP_Master$N02=ifelse(str_remove(NRMP_Master$COUNTY," CITY")!=NRMP_Master$LATLON_County&NRMP_Master$`LAT/LONRECORDED`=="YES",1,0)
     
     table(NRMP_Master$N01)
     table(NRMP_Master$N02)
@@ -580,7 +580,7 @@ server <- function(input, output,session) {
   
   output$tablex <- renderDataTable({
     data<-data()
-    badlocs=data[which(data$N02==1),c("DATE","IDNUMBER","SPECIES","LATITUDE","LONGITUDE","State_on_record","County_on_record","State_from_GPS","County_from_GPS")]
+    badlocs=data[which(data$N02==1),c("DATE","IDNUMBER","SPECIES","LATITUDE","LONGITUDE","MIS_State","MIS_County","LATLON_State","LATLON_County")]
     badlocs
   })
   
@@ -708,12 +708,12 @@ server <- function(input, output,session) {
       paste(gsub("\\..*","",input$ersdata), "_withErrors.csv", sep="")
     },
     content = function(file) {
-      data=data()[,c(1:data()$column[1],which(names(data())%in%c("State_on_record","State_from_GPS","County_on_record","County_from_GPS","Errors")))]
+      data=data()[,c(1:data()$column[1],which(names(data())%in%c("MIS_State","LATLON_State","MIS_County","LATLON_County","Errors")))]
       
       if(input$datatype=="MIS"){
         write.csv(data, file,row.names = FALSE,na="")
       }else{
-        names(data)=c(misdbf[match(names(data)[1:data()$column[1]],misdbf$MIS),"DBF.Uploader"],"State_on_record","State_from_GPS","County_on_record","County_from_GPS","Errors")
+        names(data)=c(misdbf[match(names(data)[1:data()$column[1]],misdbf$MIS),"DBF.Uploader"],"MIS_State","LATLON_State","MIS_County","LATLON_County","Errors")
         write.csv(data, file,row.names = FALSE,na="")
       }      
     }
