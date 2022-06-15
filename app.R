@@ -75,7 +75,7 @@ uscd=tigris::counties(state=stfp,cb = TRUE)
 ui <- dashboardPage(
   
   skin='blue',
-  title="NRMP Data Cleaning App",
+  title="NRMP Data Checking App",
   header = dashboardHeader(titleWidth='100%',
                            # Set height of dashboardHeader
                            tags$li(class = "dropdown",
@@ -87,7 +87,7 @@ ui <- dashboardPage(
                            title=span(tags$img(src='USDA_bw_transparent.png', style='margin-top:8px;',height=90,width=120,align="left"),
                                       column(10, class="title-box", 
                                              tags$h1(class="primary-title", style='margin-top:25px;font-size=50px',
-                                                     "NRMP MIS and DBF Uploader Data Cleaning App")))),
+                                                     "NRMP MIS and DBF Uploader Data Checking App")))),
   
   # Sidebar  
   dashboardSidebar(
@@ -118,8 +118,8 @@ ui <- dashboardPage(
   dashboardBody(
     tabsetPanel(
       tabPanel("User Guide",icon=icon("info"),
-               box(width=12,title=span("How to use this data cleaning app",style="color:green;font-size:28px"),status="success",
-                   column(8,p("Welcome to the NRMP MIS data cleaning app. This app was developed to help check for errors in data entry from MIS or from historical DBF uploader. Historically, this data checking was done by hand by NRMP staff. By automating this task, now rabies field staff (as well as NRMP) can check for errors in their own data.",style="font-size:130%;"),
+               box(width=12,title=span("How to use this data checking app",style="color:green;font-size:28px"),status="success",
+                   column(8,p("Welcome to the NRMP MIS data checking app. This app was developed to help check for errors in data entry from MIS or from historical DBF uploader. Historically, this data checking was done by hand by NRMP staff. By automating this task, now rabies field staff (as well as NRMP) can check for errors in their own data.",style="font-size:130%;"),
                           p("To start this app use the file uploader on the left panel to browse (and select) the file you would like to check for errors. Select if this file is in the MIS format or the DBF format. The file needs to be in an Excel format (.xls or .xlsx) and must include the 94 columns from an MIS output (data dump). The column names must also match the MIS data dump or the DBF uploader. Please note, this file uploader can only handle file sizes of 30MB or less. Larger files will take longer to check than smaller files. Once you have selected your file and chosen if the file is MIS or DBF, you can click on the “Run data checker” button to check the data. When the data has been checked, you can click the “Download data with errors” button to save a file to your computer.  This will produce a csv file you can open in Excel.  The farthest right column will be the error codes. A pdf of the error codes and their descriptions can be found on the “Error Definitions-PDF” tab. You should download this pdf as a reference for understanding the errors. If you have any questions about the definition of an error code, please contact Kathy Nelson (Kathleen.M.Nelson@usda.gov).",style="font-size:130%;"), 
                           p("You can be done with this app by simply uploading your data and then downloading the data with errors. However, we have provided additional tabs in this app to help you visualize and understand some of the errors in your data. Below are descriptions of the tabs and how to use them.",style="font-size:130%;")),
                    column(4,withSpinner(plotOutput(outputId = "datadone"))),
@@ -141,7 +141,7 @@ ui <- dashboardPage(
                           
                           p("     •	",strong("Is there something wrong with the file you uploaded?"),style="font-size:130%;"),
                           p("          	----	Ensure you have the correct file extension. As mentioned above, this app accepts .xls and .xlsx files only. There should be a warning if the file extension is incorrect. ",style="font-size:130%;"),
-                          p("           ----	When you dump data from MIS it outputs the result with an .html extension that looks and feels like Excel (but it’s not Excel). If you see an error in this app when trying to upload that says 'Unable to open file', you should open the file in Excel and click “Save As” and select .xls or .xlsx. Then try uploading this new file to the data cleaning app. ",style="font-size:130%;"),
+                          p("           ----	When you dump data from MIS it outputs the result with an .html extension that looks and feels like Excel (but it’s not Excel). If you see an error in this app when trying to upload that says 'Unable to open file', you should open the file in Excel and click “Save As” and select .xls or .xlsx. Then try uploading this new file to the data checking app. ",style="font-size:130%;"),
                           p("     •	",strong("Did the file upload but there are no data checking results? "),style="font-size:130%;"),
                           p("           ----	Ensure you have the correct column names in your uploaded file. This app works based on the column names that are dumped from MIS. If these names have been modified, some of the data checking will not work. Double check the column names if the file has uploaded fine, but no data checking is done.",style="font-size:130%;"),
                           p("     •	",strong("Email Kathleen.M.Nelson@usda.gov for other issues. "),style="font-size:130%;")
@@ -305,7 +305,7 @@ server <- function(input, output,session) {
     NRMP_Master$N05a=ifelse(!is.na(NRMP_Master$OTHERCOLLECTOR)&(NRMP_Master$COLLECTOR!="OTHER"),1,0)
     NRMP_Master$F05b=ifelse(NRMP_Master$COLLECTOR=="OTHER"&!is.na(NRMP_Master$COLLECTOR)&is.na(NRMP_Master$OTHERCOLLECTOR),1,0)
     NRMP_Master$N06=ifelse(NRMP_Master$METHOD=="CAGE TRAP"& !grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|OTHER|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
-    NRMP_Master$N07=ifelse(NRMP_Master$METHOD=="HANDCAUGHT/GATHERED"&!grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|OTHER|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
+    NRMP_Master$N07=ifelse(NRMP_Master$METHOD=="HANDCAUGHT/GATHERED"&!grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
     NRMP_Master$N08=ifelse(NRMP_Master$METHOD=="LEG/FOOT HOLD TRAP"& !grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|OTHER|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
     NRMP_Master$N09=ifelse(NRMP_Master$METHOD=="FIREARMS (SHOT)"& NRMP_Master$FATE!="EUTHANIZED",1,0)
     NRMP_Master$N10=ifelse(NRMP_Master$METHOD=="NON-WS CARCASS COLLECTION"&NRMP_Master$FATE!="SAMPLED (NON-WS TAKE)",1,0)
