@@ -162,7 +162,7 @@ ui <- dashboardPage(
       tabPanel("Location Check",icon = icon("map"),
                box(width=12,title=span("Location check disclaimer",style="color:green;font-size:28px"),status="success",
                    # 
-                   column(11,p("This location check determines if the latitude and longitude information corresponds to the same state and county as are on the data record.  Based on the map projection, points that are along county boundaries might suggest there is a discrepancy when there is not one (particularly along river boundaries). Use these errors as a guide to double check the locations. If you believe the location and county to be correct, then keep the record as is. ",style="font-size:130%;"),
+                   column(11,p("This location check determines if the latitude and longitude information corresponds to the same state and county as are on the data record.  Based on the map projection, points that are along county boundaries might suggest there is a discrepancy when there is not one (particularly along river boundaries). Use these errors as a guide to double check the locations. If you believe the location and county to be correct, then keep the record as is. Only locations with errors are currently plotted.",style="font-size:130%;"),
                    )
                ),
                fluidRow(
@@ -516,7 +516,7 @@ server <- function(input, output,session) {
     }
     data <- data()
     
-    df=data[,c("IDNUMBER","LONGITUDE","LATITUDE","N02","SPECIES","COUNTY","STATE")]
+    df=data[data$N02==1,c("IDNUMBER","LONGITUDE","LATITUDE","N02","SPECIES","COUNTY","STATE")]
     df=df[which(!is.na(df$LONGITUDE)),]
     loccols=c("black","red")[df$N02+1]
     
