@@ -372,28 +372,34 @@ server <- function(input, output,session) {
     
     ### Need to manipulate the IDs to get left and right ear tags to talk to eachother
     # get all ids
-    all.id=strsplit(NRMP_Master$IDNUMBER,split="/")
+    
+    all.id=strsplit(NRMP_Master$IDNUMBER[which(!is.na(NRMP_Master$IDNUMBER))],split="/")
     
     # no. of ids together
     n.id=unlist(lapply(all.id,length))
     
     uniq.1=unlist(lapply(all.id,"[[",1))
-    uniq.2=unlist(lapply(all.id[n.id>1],"[[",2))
+    uniq.2=rep("",length(uniq.1))
+    uniq.2[which(n.id>1)]=unlist(lapply(all.id[n.id>1],"[[",2))
     
     ###################################
     comb.id=sapply(1:length(all.id),function(x){
-      if(n.id[x]>1){paste(all.id[[x]],collapse="/")# if two ids, keep as is
-      }else{if(uniq.1[x]%in%c(uniq.2,uniq.1[-x])){# if only one id make sure not in any others 
-        ind2=which(uniq.2==uniq.1[x])
-        indL=which(uniq.1==uniq.1[x])
-        if(length(ind2)!=0){ids=unique(uniq.1[n.id>1][ind2])}
-        if(length(indL)!=0){ids=unique(uniq.2[indL])} # if in others, use combined
-        ifelse(length(unique(c(uniq.1[x],ids)))>1,paste(unique(c(uniq.1[x],ids)),collapse="/"),uniq.1[x])
-      }else{uniq.1[x] # or single id
-      }}}, # end function
+      if(n.id[x]>1){paste(all.id[[x]],collapse="/")  # if two ids, keep as is
+      }else{
+        if(uniq.1[x]%in%c(uniq.2,uniq.1[-x])){# if only one id make sure not in any others
+          ind2=which(uniq.2==uniq.1[x]) # second position
+          indL=which(uniq.1==uniq.1[x]) # first position
+          indL=indL[-which(indL==x)]
+          if(length(ind2)!=0){ids=unique(uniq.1[ind2])}
+          if(length(indL)!=0){ids=unique(uniq.2[indL])} # if in others, use combined
+          ifelse(length(unique(c(uniq.1[x],ids)))>1,paste(unique(c(uniq.1[x],ids)),collapse="/"),uniq.1[x])
+        }else{
+          uniq.1[x] # or single id
+        }}}, # end function
       simplify=TRUE)
     
-    NRMP_Master$IDNUMBER2= comb.id
+    NRMP_Master$IDNUMBER2=NA
+    NRMP_Master$IDNUMBER2[which(!is.na(NRMP_Master$IDNUMBER))]= comb.id
     ####
     NRMP_Master=NRMP_Master[order(NRMP_Master$STATE,NRMP_Master$IDNUMBER2,NRMP_Master$DATE),]
     NRMP_Master$WasCaught=0
@@ -543,7 +549,7 @@ server <- function(input, output,session) {
     }
     data <- data()
     
-    df=data[,c("IDNUMBER","LONGITUDE","LATITUDE","N02","SPECIES","COUNTY","STATE")]
+    df=data[data$N01==1,c("IDNUMBER","LONGITUDE","LATITUDE","N02","SPECIES","COUNTY","STATE")]
     df=df[which(!is.na(df$LONGITUDE)),]
     loccols=c("black","red")[df$N02+1]
     
