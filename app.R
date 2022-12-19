@@ -162,7 +162,7 @@ ui <- dashboardPage(
       tabPanel("Location Check",icon = icon("map"),
                box(width=12,title=span("Location check disclaimer",style="color:green;font-size:28px"),status="success",
                    # 
-                   column(11,p("This location check determines if the latitude and longitude information corresponds to the same state and county as are on the data record.  Based on the map projection, points that are along county boundaries might suggest there is a discrepancy when there is not one (particularly along river boundaries). Use these errors as a guide to double check the locations. If you believe the location and county to be correct, then keep the record as is. Only locations with errors are currently plotted.",style="font-size:130%;"),
+                   column(11,p("This location check determines if the latitude and longitude information corresponds to the same state and county as are on the data record.  Based on the map projection, points that are along county boundaries might suggest there is a discrepancy when there is not one (particularly along river boundaries). Use these errors as a guide to double check the locations. If you believe the location and county to be correct, then keep the record as is. ",style="font-size:130%;"),
                    )
                ),
                fluidRow(
@@ -368,11 +368,38 @@ server <- function(input, output,session) {
     ######################################
     NRMP_Master$DATE2=as.POSIXct(NRMP_Master$DATE,"%Y-%m-%d")
     NRMP_Master$DaysSinceCapture=as.numeric(difftime(Sys.Date(),NRMP_Master$DATE2,units="days"))
-    NRMP_Master=NRMP_Master[order(NRMP_Master$STATE,NRMP_Master$IDNUMBER,NRMP_Master$DATE),]
+    
+    
+    ### Need to manipulate the IDs to get left and right ear tags to talk to eachother
+    # get all ids
+    all.id=strsplit(NRMP_Master$IDNUMBER,split="/")
+    
+    # no. of ids together
+    n.id=unlist(lapply(all.id,length))
+    
+    uniq.1=unlist(lapply(all.id,"[[",1))
+    uniq.2=unlist(lapply(all.id[n.id>1],"[[",2))
+    
+    ###################################
+    comb.id=sapply(1:length(all.id),function(x){
+      if(n.id[x]>1){paste(all.id[[x]],collapse="/")# if two ids, keep as is
+      }else{if(uniq.1[x]%in%c(uniq.2,uniq.1[-x])){# if only one id make sure not in any others 
+        ind2=which(uniq.2==uniq.1[x])
+        indL=which(uniq.1==uniq.1[x])
+        if(length(ind2)!=0){ids=unique(uniq.1[n.id>1][ind2])}
+        if(length(indL)!=0){ids=unique(uniq.2[indL])} # if in others, use combined
+        ifelse(length(unique(c(uniq.1[x],ids)))>1,paste(unique(c(uniq.1[x],ids)),collapse="/"),uniq.1[x])
+      }else{uniq.1[x] # or single id
+      }}}, # end function
+      simplify=TRUE)
+    
+    NRMP_Master$IDNUMBER2= comb.id
+    ####
+    NRMP_Master=NRMP_Master[order(NRMP_Master$STATE,NRMP_Master$IDNUMBER2,NRMP_Master$DATE),]
     NRMP_Master$WasCaught=0
     NRMP_Master$diffdat=c(0,as.numeric(diff(NRMP_Master$DATE2,units="days"),units="days"))
     
-    NRMP_Master$IDState=paste(NRMP_Master$IDNUMBER,NRMP_Master$STATE,sep=".")
+    NRMP_Master$IDState=paste(NRMP_Master$IDNUMBER2,NRMP_Master$STATE,sep=".")
     
     # Indicator for first of ID series
     NRMP_Master$t=sapply(1:nrow(NRMP_Master)-1,function(x)identical(NRMP_Master$IDState[x],NRMP_Master$IDState[x+1]))
@@ -384,17 +411,17 @@ server <- function(input, output,session) {
     # Making sure animals don't change species among captures
     spcheck=tapply(NRMP_Master$SPECIES,NRMP_Master$IDState,function(x)length(unique(x))>1)
     NRMP_Master$N24=0
-    NRMP_Master[which(NRMP_Master$IDState%in%names(spcheck[spcheck==TRUE])&!is.na(NRMP_Master$IDNUMBER)),"N24"]=1
-    NRMP_Master$N24=ifelse(is.na(NRMP_Master$IDNUMBER),0,NRMP_Master$N24)
+    NRMP_Master[which(NRMP_Master$IDState%in%names(spcheck[spcheck==TRUE])&!is.na(NRMP_Master$IDNUMBER2)),"N24"]=1
+    NRMP_Master$N24=ifelse(is.na(NRMP_Master$IDNUMBER2),0,NRMP_Master$N24)
     
     # Error if an individual is called both a male and female at some point during its capture
     scheck=tapply(NRMP_Master$SEX,NRMP_Master$IDState,function(x)any(x%in%c("MALE"))&any(x%in%c("FEMALE")))
     NRMP_Master$N25=0
     NRMP_Master[which(NRMP_Master$IDState%in%names(scheck[scheck==TRUE])),"N25"]=1
-    NRMP_Master$N25=ifelse(is.na(NRMP_Master$IDNUMBER),0,NRMP_Master$N25)
+    NRMP_Master$N25=ifelse(is.na(NRMP_Master$IDNUMBER2),0,NRMP_Master$N25)
     
     # Error if an individual as the same ID and captured on the same day
-    NRMP_Master$N26=ifelse(NRMP_Master$diffdat==0&!is.na(NRMP_Master$IDNUMBER),1,0)
+    NRMP_Master$N26=ifelse(NRMP_Master$diffdat==0&!is.na(NRMP_Master$IDNUMBER2),1,0)
     
     NRMP_Master=NRMP_Master[order(NRMP_Master$AmyID),]
     NRMP_Master$N26a=ifelse(NRMP_Master$LACTATION=="YES"&NRMP_Master$SEX!="FEMALE",1,0)
@@ -516,7 +543,7 @@ server <- function(input, output,session) {
     }
     data <- data()
     
-    df=data[data$N02==1,c("IDNUMBER","LONGITUDE","LATITUDE","N02","SPECIES","COUNTY","STATE")]
+    df=data[,c("IDNUMBER","LONGITUDE","LATITUDE","N02","SPECIES","COUNTY","STATE")]
     df=df[which(!is.na(df$LONGITUDE)),]
     loccols=c("black","red")[df$N02+1]
     
