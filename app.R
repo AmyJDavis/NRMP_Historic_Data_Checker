@@ -5,7 +5,7 @@
 ### This app is targeted for examination of MIS data and the DBF uploader, 
 ###
 ### Amy J Davis
-### February 16, 2021, Updated December 30, 2022
+### February 16, 2021, Updated April 19, 2022
 ###
 ########################################################################
 ########################################################################
@@ -110,8 +110,11 @@ ui <- dashboardPage(
     fluidRow(column(2),column(1,actionButton("go","Run data checker",icon("running"),
                                              style="color: #fff; background-color: #c00000; border-color: #Adf.combF2F; font-size:140%"))),
     
-    tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"To download the data with errors, click the button below",align='left'),
-    downloadButton(outputId = "download",label =  "Download data with errors",style="color:black;font-size:18px")
+    tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"For a .csv file: ",align='left'),
+    downloadButton(outputId = "download",label =  "Download data with errors as .csv",style="color:black;font-size:18px"),
+    tags$h4(class="primary-subtitle", style='margin-top:8px;margin-left:15px;',"For a .xlsx file: ",align='left'),
+    downloadButton(outputId = "downloadxlsx",label =  "Download data with errors as .xlsx",style="color:black;font-size:18px")
+    
   ),
   
   # Show output
@@ -120,7 +123,7 @@ ui <- dashboardPage(
       tabPanel("User Guide",icon=icon("info"),
                box(width=12,title=span("How to use this data checking app",style="color:green;font-size:28px"),status="success",
                    column(8,p("Welcome to the NRMP MIS data checking app. This app was developed to help check for errors in data entry from MIS or from historical DBF uploader. Historically, this data checking was done by hand by NRMP staff. By automating this task, now rabies field staff (as well as NRMP) can check for errors in their own data.",style="font-size:130%;"),
-                          p("To start this app use the file uploader on the left panel to browse (and select) the file you would like to check for errors. Select if this file is in the MIS format or the DBF format. The file needs to be in an Excel format (.xls or .xlsx) and must include the 94 columns from an MIS output (data dump). The column names must also match the MIS data dump or the DBF uploader. Please note, this file uploader can only handle file sizes of 30MB or less. Larger files will take longer to check than smaller files. Once you have selected your file and chosen if the file is MIS or DBF, you can click on the “Run data checker” button to check the data. When the data has been checked, you can click the “Download data with errors” button to save a file to your computer.  This will produce a csv file you can open in Excel.  The farthest right column will be the error codes. A pdf of the error codes and their descriptions can be found on the “Error Definitions-PDF” tab. You should download this pdf as a reference for understanding the errors. If you have any questions about the definition of an error code, please contact Kathy Nelson (Kathleen.M.Nelson@usda.gov).",style="font-size:130%;"), 
+                          p("To start this app use the file uploader on the left panel to browse (and select) the file you would like to check for errors. Select if this file is in the MIS format or the DBF format. The file needs to be in an Excel format (.xls or .xlsx) and must include the 94 columns from an MIS output (data dump). The column names must also match the MIS data dump or the DBF uploader. Please note, this file uploader can only handle file sizes of 30MB or less. Larger files will take longer to check than smaller files. Once you have selected your file and chosen if the file is MIS or DBF, you can click on the “Run data checker” button to check the data. When the data has been checked, you can click one of the “Download data with errors” buttons to save a file to your computer either as a .csv file or a .xlsx file. The farthest right column will be the error codes. A pdf of the error codes and their descriptions can be found on the “Error Definitions-PDF” tab. You should download this pdf as a reference for understanding the errors. If you have any questions about the definition of an error code, please contact Kathy Nelson (Kathleen.M.Nelson@usda.gov).",style="font-size:130%;"), 
                           p("You can be done with this app by simply uploading your data and then downloading the data with errors. However, we have provided additional tabs in this app to help you visualize and understand some of the errors in your data. Below are descriptions of the tabs and how to use them.",style="font-size:130%;")),
                    column(4,withSpinner(plotOutput(outputId = "datadone"))),
                    column(11,        
@@ -767,6 +770,24 @@ server <- function(input, output,session) {
       }      
     }
   )
+  
+  ### Download data button information for .xlsx
+  output$downloadxlsx <- downloadHandler(
+    filename = function() {
+      paste(gsub("\\..*","",input$ersdata), "_withErrors.xlsx", sep="")
+    },
+    content = function(file) {
+      data=data()[,c(1:data()$column[1],which(names(data())%in%c("MIS_State","LATLON_State","MIS_County","LATLON_County","Errors")))]
+      if(input$datatype=="MIS"){
+        xlsx::write.xlsx2(data, file,row.names = FALSE,col.names = TRUE,append=FALSE)
+      }else{
+        names(data)=c(misdbf[match(names(data)[1:data()$column[1]],misdbf$MIS),"DBF.Uploader"],"MIS_State","LATLON_State","MIS_County","LATLON_County","Errors")
+        xlsx::write.xlsx2(data, file,row.names = FALSE,col.names = TRUE, append=FALSE)
+      }      
+    }
+    
+  )
+  
   
   session$onSessionEnded(stopApp)
   
