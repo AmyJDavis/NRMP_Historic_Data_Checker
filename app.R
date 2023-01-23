@@ -5,7 +5,7 @@
 ### This app is targeted for examination of MIS data and the DBF uploader, 
 ###
 ### Amy J Davis
-### February 16, 2021, Updated January 5, 2021
+### February 16, 2021, Updated January 23, 2023
 ###
 ########################################################################
 ########################################################################
@@ -62,8 +62,10 @@ options(shiny.maxRequestSize = 30*1024^2)
 ### 
 
 ### Read in Error code file
-Fix_Comments <- read_excel("www/DataCheckingErrorCodesAll.xlsx")
+Fix_Comments <- openxlsx::read.xlsx("www/DataCheckingErrorCodesAll.xlsx")
 misdbf=read.csv("www/MIS_DBF_colnames.csv")
+
+
 
 ### County information
 stfp <- 1:56
@@ -239,18 +241,41 @@ server <- function(input, output,session) {
     #### Read in Data ####
     # This is the file dumped from MIS
     # New option for importing the data
-    NRMP_Masters <- read_excel(input$ersdata$datapath)
+    #NRMP_Masters <- openxlsx::read.xlsx(input$ersdata$datapath,detectDates = TRUE)
+    
+    
+    if(tools::file_ext(input$ersdata$datapath)=="csv"){
+      if(input$datatype=="Historical"){
+        NRMP_Masters=read.csv(input$ersdata$datapath)
+        
+        NRMP_Masters$Last=NA
+        colind=match(names(NRMP_Masters),misdbf$DBF.Uploader)
+        NRMP_Master=NRMP_Masters
+        names(NRMP_Master)=ifelse(is.na(colind),names(NRMP_Masters),misdbf$MIS[colind])
+      }else{
+        NRMP_Masters=read.csv(input$ersdata$datapath)
+        
+        names(NRMP_Masters)[which(names(NRMP_Masters)=="LAT.LONRECORDED")]="LAT/LONRECORDED"
+        names(NRMP_Masters)[which(names(NRMP_Masters)=="PROCESSED.30DAYSAGO")]="PROCESSED<30DAYSAGO"
+        NRMP_Master=NRMP_Masters
+      }
+      
+      
+    }else{
+      NRMP_Masters <- openxlsx::read.xlsx(input$ersdata$datapath,detectDates = TRUE)
+      if(input$datatype=="Historical"){
+        NRMP_Masters$Last=NA
+        colind=match(names(NRMP_Masters),misdbf$DBF.Uploader)
+        NRMP_Master=NRMP_Masters
+        names(NRMP_Master)=ifelse(is.na(colind),names(NRMP_Masters),misdbf$MIS[colind])
+      }else{
+        NRMP_Master=NRMP_Masters
+      }
+    }
     
     
     ### Change the names of the columns if the data came from the historical data checker
-    if(input$datatype=="Historical"){
-      NRMP_Masters$Last=NA
-      colind=match(names(NRMP_Masters),misdbf$DBF.Uploader)
-      NRMP_Master=NRMP_Masters
-      names(NRMP_Master)=ifelse(is.na(colind),names(NRMP_Masters),misdbf$MIS[colind])
-    }else{
-      NRMP_Master=NRMP_Masters
-    }
+    
     NRMP_Master$column=dim(NRMP_Masters)[2]-1
     NRMP_Master$AmyID=1:dim(NRMP_Master)[1]
     # NRMP_Master=NRMP_Master[!is.na(NRMP_Master$STATE),]
@@ -779,10 +804,11 @@ server <- function(input, output,session) {
     content = function(file) {
       data=data()[,c(1:data()$column[1],which(names(data())%in%c("MIS_State","LATLON_State","MIS_County","LATLON_County","Errors")))]
       if(input$datatype=="MIS"){
-        xlsx::write.xlsx2(data, file,row.names = FALSE,col.names = TRUE,append=FALSE)
+        openxlsx::write.xlsx(data, file,col.names = TRUE)
       }else{
         names(data)=c(misdbf[match(names(data)[1:data()$column[1]],misdbf$MIS),"DBF.Uploader"],"MIS_State","LATLON_State","MIS_County","LATLON_County","Errors")
-        xlsx::write.xlsx2(data, file,row.names = FALSE,col.names = TRUE, append=FALSE)
+        
+        openxlsx::write.xlsx(data, file,col.names = TRUE)
       }      
     }
     
