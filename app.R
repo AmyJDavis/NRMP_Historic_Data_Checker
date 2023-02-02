@@ -5,7 +5,7 @@
 ### This app is targeted for examination of MIS data and the DBF uploader, 
 ###
 ### Amy J Davis
-### February 16, 2021, Updated January 23, 2023
+### February 16, 2021, Updated April 19, 2022
 ###
 ########################################################################
 ########################################################################
@@ -804,11 +804,13 @@ server <- function(input, output,session) {
     content = function(file) {
       data=data()[,c(1:data()$column[1],which(names(data())%in%c("MIS_State","LATLON_State","MIS_County","LATLON_County","Errors")))]
       if(input$datatype=="MIS"){
-        openxlsx::write.xlsx(data, file,col.names = TRUE)
+        #openxlsx::write.xlsx(data, file,col.names = TRUE)
+        writexl::write_xlsx(data,file,col_names = TRUE)
       }else{
         names(data)=c(misdbf[match(names(data)[1:data()$column[1]],misdbf$MIS),"DBF.Uploader"],"MIS_State","LATLON_State","MIS_County","LATLON_County","Errors")
         
-        openxlsx::write.xlsx(data, file,col.names = TRUE)
+        #openxlsx::write.xlsx(data, file,col.names = TRUE)
+        writexl::write_xlsx(data,file,col_names = TRUE)
       }      
     }
     
