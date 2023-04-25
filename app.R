@@ -543,8 +543,14 @@ server <- function(input, output,session) {
     
     #### Creating a columne for the errors
     hm=apply(errordf,1,function(x){which(x==1)})
-    hm2=lapply(hm,names)
-    NRMP_Master$Errors=do.call('rbind',lapply(hm2,paste,collapse=";"))
+    if(is.list(hm)){
+      hm2=lapply(hm,names)
+      NRMP_Master$Errors=do.call('rbind',lapply(hm2,paste,collapse=";"))
+      
+    } else{
+      NRMP_Master$Errors=paste(rownames(hm),collapse=";")
+      
+    }
     
     ### Make lat/longs zeros NA values
     NRMP_Master$LATITUDE[NRMP_Master$LATITUDE==0]=NA
