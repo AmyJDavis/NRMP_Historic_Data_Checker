@@ -303,6 +303,10 @@ server <- function(input, output,session) {
     NRMP_Master$MIS_State=toupper(fips[match(NRMP_Master$STATE,fips$state),"state_name"])
     NRMP_Master$lat=ifelse(is.na(NRMP_Master$LATITUDE),0,NRMP_Master$LATITUDE)
     NRMP_Master$lon=ifelse(is.na(NRMP_Master$LONGITUDE),0,NRMP_Master$LONGITUDE)
+
+    ## Specific fix for DeKalb county Alabama and Dona Ana county New Mexico
+    NRMP_Master$COUNTY[NRMP_Master$COUNTY=="DE KALB"]="DEKALB"
+    NRMP_Master$COUNTY[NRMP_Master$COUNTY=="DONA ANA"]="DOÑA ANA"
     
     ## Specific fix for DeKalb county Alabama and Dona Ana county New Mexico
     NRMP_Master$COUNTY[NRMP_Master$COUNTY=="DE KALB"]="DEKALB"
