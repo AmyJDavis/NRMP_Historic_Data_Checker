@@ -65,7 +65,13 @@ options(shiny.maxRequestSize = 30*1024^2)
 Fix_Comments <- openxlsx::read.xlsx("www/DataCheckingErrorCodesAll.xlsx")
 misdbf=read.csv("www/MIS_DBF_colnames.csv")
 
-
+### Set column types
+col_types=c('date','text','text','text','text','text','text','text','text','text','text','text','date','text','numeric','text','text','text',
+            'numeric','numeric','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text',
+            'text','text','text','text','text','text','text','text','text','text','text','text','numeric','text','text','text','text','text',
+            'text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','date','text',
+            'text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text',
+            'text','text')
 
 ### County information
 stfp <- 1:56
