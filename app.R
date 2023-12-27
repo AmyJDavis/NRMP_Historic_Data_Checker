@@ -65,7 +65,13 @@ options(shiny.maxRequestSize = 30*1024^2)
 Fix_Comments <- openxlsx::read.xlsx("www/DataCheckingErrorCodesAll.xlsx")
 misdbf=read.csv("www/MIS_DBF_colnames.csv")
 
-
+### Set column types
+col_types=c('date','text','text','text','text','text','text','text','text','text','text','text','date','text','numeric','text','text','text',
+            'numeric','numeric','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text',
+            'text','text','text','text','text','text','text','text','text','text','text','text','numeric','text','text','text','text','text',
+            'text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','date','text',
+            'text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text','text',
+            'text','text')
 
 ### County information
 stfp <- 1:56
@@ -278,6 +284,8 @@ server <- function(input, output,session) {
         colind=match(names(NRMP_Masters),misdbf$DBF.Uploader)
         NRMP_Master=NRMP_Masters
         names(NRMP_Master)=ifelse(is.na(colind),names(NRMP_Masters),misdbf$MIS[colind])
+        NRMP_Master$DATE2=as.POSIXct(NRMP_Master$DATE,format="%Y-%m-%d")
+        
       }else{
         NRMP_Master <- read_excel(input$ersdata$datapath)
         
