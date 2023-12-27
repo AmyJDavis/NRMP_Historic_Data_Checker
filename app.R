@@ -5,7 +5,7 @@
 ### This app is targeted for examination of MIS data and the DBF uploader, 
 ###
 ### Amy J Davis
-### February 16, 2021, Updated April 25, 2023
+### February 16, 2021, Updated May 6, 2023
 ###
 ########################################################################
 ########################################################################
@@ -252,37 +252,53 @@ server <- function(input, output,session) {
         colind=match(names(NRMP_Masters),misdbf$DBF.Uploader)
         NRMP_Master=NRMP_Masters
         names(NRMP_Master)=ifelse(is.na(colind),names(NRMP_Masters),misdbf$MIS[colind])
-      }else{
-        NRMP_Masters=read.csv(input$ersdata$datapath)
+        NRMP_Master$DATE2=as.POSIXct(NRMP_Master$DATE,format="%m/%d/%Y")
+        NRMP_Master$DATELASTORV=as.POSIXct(NRMP_Master$DATELASTORV,format="%m/%d/%Y")
+        chrind=which(sapply(NRMP_Master, class) == 'character')
+        NRMP_Master[,chrind][NRMP_Master[,chrind]==""]=NA
         
-        names(NRMP_Masters)[which(names(NRMP_Masters)=="LAT.LONRECORDED")]="LAT/LONRECORDED"
-        names(NRMP_Masters)[which(names(NRMP_Masters)=="PROCESSED.30DAYSAGO")]="PROCESSED<30DAYSAGO"
-        NRMP_Master=NRMP_Masters
+      }else{
+        NRMP_Master=read.csv(input$ersdata$datapath)
+        names(NRMP_Master)[which(names(NRMP_Master)=="LAT.LONRECORDED")]="LAT/LONRECORDED"
+        names(NRMP_Master)[which(names(NRMP_Master)=="PROCESSED.30DAYSAGO")]="PROCESSED<30DAYSAGO"
+        NRMP_Master$DATE2=as.POSIXct(NRMP_Master$DATE,format="%m/%d/%Y")
+        NRMP_Master$DATELASTORV=as.POSIXct(NRMP_Master$DATELASTORV,format="%m/%d/%Y")
+        chrind=which(sapply(NRMP_Master, class) == 'character')
+        NRMP_Master[,chrind][NRMP_Master[,chrind]==""]=NA
+        
+        
       }
       
       
     }else{
-      NRMP_Masters <- openxlsx::read.xlsx(input$ersdata$datapath,detectDates = TRUE)
       if(input$datatype=="Historical"){
+        NRMP_Masters <- openxlsx::read.xlsx(input$ersdata$datapath,detectDates = TRUE)
+        
         NRMP_Masters$Last=NA
         colind=match(names(NRMP_Masters),misdbf$DBF.Uploader)
         NRMP_Master=NRMP_Masters
         names(NRMP_Master)=ifelse(is.na(colind),names(NRMP_Masters),misdbf$MIS[colind])
       }else{
-        NRMP_Master=NRMP_Masters
+        NRMP_Master <- read_excel(input$ersdata$datapath)
+        
+        if(dim(NRMP_Master)[2]>94){
+          col_types=c(col_types,rep("guess",dim(NRMP_Master)[2]-94))
+        }
+        
+        NRMP_Master <- read_excel(input$ersdata$datapath,col_types = col_types)
+        NRMP_Master$DATE2=as.POSIXct(NRMP_Master$DATE,format="%Y-%m-%d")
       }
     }
     
     
     ### Change the names of the columns if the data came from the historical data checker
-    
-    NRMP_Master$column=dim(NRMP_Masters)[2]-1
+    NRMP_Master$column=dim(NRMP_Master)[2]-1
     NRMP_Master$AmyID=1:dim(NRMP_Master)[1]
     # NRMP_Master=NRMP_Master[!is.na(NRMP_Master$STATE),]
     
     # Fix Data Before Checks
-    NRMP_Master$DATE <- as.character(NRMP_Master$DATE)
-    NRMP_Master$DATELASTORV <- as.character(NRMP_Master$DATELASTORV)
+    # NRMP_Master$DATE <- as.character(NRMP_Master$DATE)
+    # NRMP_Master$DATELASTORV <- as.character(NRMP_Master$DATELASTORV)
     NRMP_Master$RECAPTURE <- as.character(NRMP_Master$RECAPTURE)
     # Make columns for checks 
     Fixdf=data.frame(matrix(0,length(NRMP_Master$DATE),dim(Fix_Comments)[1]))
@@ -303,14 +319,6 @@ server <- function(input, output,session) {
     NRMP_Master$MIS_State=toupper(fips[match(NRMP_Master$STATE,fips$state),"state_name"])
     NRMP_Master$lat=ifelse(is.na(NRMP_Master$LATITUDE),0,NRMP_Master$LATITUDE)
     NRMP_Master$lon=ifelse(is.na(NRMP_Master$LONGITUDE),0,NRMP_Master$LONGITUDE)
-
-    ## Specific fix for DeKalb county Alabama and Dona Ana county New Mexico
-    NRMP_Master$COUNTY[NRMP_Master$COUNTY=="DE KALB"]="DEKALB"
-    NRMP_Master$COUNTY[NRMP_Master$COUNTY=="DONA ANA"]="DOÑA ANA"
-    
-    ## Specific fix for DeKalb county Alabama and Dona Ana county New Mexico
-    NRMP_Master$COUNTY[NRMP_Master$COUNTY=="DE KALB"]="DEKALB"
-    NRMP_Master$COUNTY[NRMP_Master$COUNTY=="DONA ANA"]="DOÑA ANA"
     
     # To get county polygon data frame information
     pnts_sf <- st_as_sf(NRMP_Master, coords = c('lon', 'lat'), crs = st_crs(uscd))
@@ -321,7 +329,6 @@ server <- function(input, output,session) {
       MIS_County=COUNTY,
       LATLON_County = gsub('[[:punct:] ]+',' ',toupper(if_else(is.na(intersection), '', uscd$NAME[intersection]))),
     ) 
-    
     NRMP_Master=pnts %>% st_drop_geometry()
     
     NRMP_Master$N01=ifelse(NRMP_Master$MIS_State!=NRMP_Master$LATLON_State&NRMP_Master$`LAT/LONRECORDED`=="YES",1,0)
@@ -331,7 +338,6 @@ server <- function(input, output,session) {
     table(NRMP_Master$N02)
     
     
-    
     ######################################
     ###
     ### AJD Check for Method/Fate Errors 
@@ -339,8 +345,6 @@ server <- function(input, output,session) {
     ######################################
     NRMP_Master$N04=ifelse(grepl("CAGE TRAP|FIREARMS|HANDCAUGHT/GATHERED|LEG/FOOT HOLD TRAP|ROAD KILL|WS INCIDENTAL TAKE ",NRMP_Master$METHOD)& NRMP_Master$COLLECTOR!="WS",1,0)
     NRMP_Master$N05=ifelse(NRMP_Master$COLLECTOR!="WS"&(NRMP_Master$FATE=="DIED UNDER CARE"|NRMP_Master$FATE=="EUTHANIZED"|NRMP_Master$FATE=="FOUND DEAD"|NRMP_Master$FATE=="NO FATE"|NRMP_Master$FATE=="OTHER"|NRMP_Master$FATE=="RELEASED"|NRMP_Master$FATE=="SAMPLED (WS TAKE)"),1,0)
-    NRMP_Master$N05a=ifelse(!is.na(NRMP_Master$OTHERCOLLECTOR)&(NRMP_Master$COLLECTOR!="OTHER"),1,0)
-    NRMP_Master$F05b=ifelse(NRMP_Master$COLLECTOR=="OTHER"&!is.na(NRMP_Master$COLLECTOR)&is.na(NRMP_Master$OTHERCOLLECTOR),1,0)
     NRMP_Master$N06=ifelse(NRMP_Master$METHOD=="CAGE TRAP"& !grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|OTHER|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
     NRMP_Master$N07=ifelse(NRMP_Master$METHOD=="HANDCAUGHT/GATHERED"&!grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
     NRMP_Master$N08=ifelse(NRMP_Master$METHOD=="LEG/FOOT HOLD TRAP"& !grepl('DIED UNDER CARE|EUTHANIZED|FOUND DEAD|OTHER|RELEASED|NO FATE',NRMP_Master$FATE),1,0)
@@ -349,12 +353,11 @@ server <- function(input, output,session) {
     NRMP_Master$N11=ifelse(NRMP_Master$METHOD=="NON-WS EUTHANIZED"&NRMP_Master$FATE!="SAMPLED (NON-WS TAKE)",1,0)
     NRMP_Master$N12=ifelse(NRMP_Master$METHOD=="ROAD KILL"&NRMP_Master$FATE!="FOUND DEAD",1,0)
     NRMP_Master$N13=ifelse(NRMP_Master$METHOD=="WS INCIDENTAL TAKE"&NRMP_Master$FATE!="SAMPLED (WS TAKE)",1,0)
-    NRMP_Master$N13a=ifelse(NRMP_Master$DENSITYSTUDY=="NO"&!is.na(NRMP_Master$DENSITYSTUDY)&!is.na(NRMP_Master$DENSITYID),1,0)
     
     ###
     ### ORV issues
     #
-    NRMP_Master$N15=ifelse(NRMP_Master$ORVNAIVE=="YES"&!is.na(NRMP_Master$DATELASTORV),1,0)
+    NRMP_Master$N15=ifelse((NRMP_Master$ORVNAIVE=="YES"|NRMP_Master$ORVNAIVE=="")&!is.na(NRMP_Master$DATELASTORV),1,0)
     # Error if ACTIVITY and ORVNAIVE don't match
     NRMP_Master$N16=ifelse(NRMP_Master$ACTIVITY=="TRAPPING (ORV NAIVE)"&NRMP_Master$ORVNAIVE!="YES",1,0)
     NRMP_Master$N16=ifelse(NRMP_Master$ACTIVITY=="TRAPPING (ORV POST-BAIT)"&NRMP_Master$ORVNAIVE!="NO",1,NRMP_Master$N16)
@@ -364,9 +367,9 @@ server <- function(input, output,session) {
     NRMP_Master$N17[is.na(NRMP_Master$N17)]=0
     
     # Error for ORVNAIVE and bait type match
-    NRMP_Master$N18=ifelse(NRMP_Master$ORVNAIVE=="YES"&NRMP_Master$ORVBAITTYPE!="NONE (NAIVE)",1,0)
-    NRMP_Master$N18=ifelse(NRMP_Master$ORVNAIVE=="NO"&(is.na(NRMP_Master$ORVBAITTYPE)|NRMP_Master$ORVBAITTYPE=="NONE (NAIVE)"),1,NRMP_Master$N18)
-    NRMP_Master$N18=ifelse((!is.na(NRMP_Master$ORVBAITTYPE)|NRMP_Master$ORVBAITTYPE!="NONE (NAIVE)")&is.na(NRMP_Master$ORVNAIVE),1,NRMP_Master$N18)
+    NRMP_Master$N18=ifelse((NRMP_Master$ORVNAIVE=="YES"|NRMP_Master$ORVNAIVE=="")&NRMP_Master$ORVBAITTYPE!="NONE (NAIVE)",1,0)
+    NRMP_Master$N18=ifelse(NRMP_Master$ORVNAIVE=="NO"&(is.na(NRMP_Master$ORVBAITTYPE)|NRMP_Master$ORVBAITTYPE=="NONE (NAIVE)"|NRMP_Master$ORVBAITTYPE==""),1,NRMP_Master$N18)
+    NRMP_Master$N18=ifelse((!is.na(NRMP_Master$ORVBAITTYPE)|NRMP_Master$ORVBAITTYPE!="NONE (NAIVE)"|NRMP_Master$ORVBAITTYPE!="")&is.na(NRMP_Master$ORVNAIVE),1,NRMP_Master$N18)
     NRMP_Master$N18[is.na(NRMP_Master$N18)]=0
     
     # Error for ORVNAIVE is no DATELASTORV must have a value
@@ -385,16 +388,13 @@ server <- function(input, output,session) {
     NRMP_Master$N20=ifelse((NRMP_Master$ACTIVITY=="COORDINATED TVR"|NRMP_Master$ACTIVITY=="TRAPPING (ORV NAIVE)"|NRMP_Master$ACTIVITY=="TRAPPING (ORV POST-BAIT)")&NRMP_Master$SPECIES%in%targetsps&NRMP_Master$TARGETSPECIES!="YES",1,0)
     NRMP_Master$N20=ifelse(!NRMP_Master$SPECIES%in%targetsps&NRMP_Master$SPECIES!="NO SPECIES"&NRMP_Master$TARGETSPECIES!="NO",1,NRMP_Master$N20)
     
-    # 
-    NRMP_Master$N20a=ifelse(NRMP_Master$TARGETSPECIES=="YES"&NRMP_Master$MISTARGET!="INTENTIONAL",1,0)
-    
     ###
     ### Recapture process issues
     ###
     # Error if MISTARGET is "INTENTIONAL and RECAPTURE is blank
     NRMP_Master$N21=ifelse((NRMP_Master$METHOD=="CAGE TRAP"|NRMP_Master$METHOD=="HANDCAUGHT/GATHERED"|NRMP_Master$METHOD=="LEG/FOOT HOLD TRAP")&NRMP_Master$MISTARGET=="INTENTIONAL"&!is.na(NRMP_Master$MISTARGET)&is.na(NRMP_Master$RECAPTURE),1,0)
-    # Error if MISTARGET is "INTENTIONAL and there is no value if it was collected within 30 days
-    NRMP_Master$N22=ifelse((NRMP_Master$METHOD=="CAGE TRAP"|NRMP_Master$METHOD=="HANDCAUGHT/GATHERED"|NRMP_Master$METHOD=="LEG/FOOT HOLD TRAP")&NRMP_Master$MISTARGET=="INTENTIONAL"&!is.na(NRMP_Master$MISTARGET)&is.na(NRMP_Master$`PROCESSED<30DAYSAGO`),1,0)
+    # Error if MISTARGET is "INTENTIONAL" and there is no value if it was collected within 30 days
+    NRMP_Master$N22=ifelse((NRMP_Master$METHOD=="CAGE TRAP"|NRMP_Master$METHOD=="HANDCAUGHT/GATHERED"|NRMP_Master$METHOD=="LEG/FOOT HOLD TRAP")&NRMP_Master$MISTARGET=="INTENTIONAL"&!is.na(NRMP_Master$MISTARGET)&(is.na(NRMP_Master$`PROCESSED<30DAYSAGO`)|NRMP_Master$`PROCESSED<30DAYSAGO`==""),1,0)
     
     
     ######################################
@@ -402,7 +402,6 @@ server <- function(input, output,session) {
     ### Individual checks
     ###
     ######################################
-    NRMP_Master$DATE2=as.POSIXct(NRMP_Master$DATE,"%Y-%m-%d")
     NRMP_Master$DaysSinceCapture=as.numeric(difftime(Sys.Date(),NRMP_Master$DATE2,units="days"))
     
     
