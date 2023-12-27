@@ -14,7 +14,7 @@
 ###  Details of this app
 ###  This app will not look at time of last ORV baiting since historical shapefiles are poor
 ###  This app will look at some logical issues that are not an issue in the current MIS data entry options
-###  
+
 
 ### Libraries
 t_col <- function(color, percent = 30, name = NULL) {
