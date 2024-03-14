@@ -456,6 +456,8 @@ server <- function(input, output,session) {
     
     # Error for the if the animal was caught within the last 30 days but PROCESSED<30DAYSAGE is "NO"
     NRMP_Master$N23=ifelse(NRMP_Master$diffdat<30&NRMP_Master$`PROCESSED<30DAYSAGO`=="NO"&!is.na(NRMP_Master$`PROCESSED<30DAYSAGO`),1,0)
+    NRMP_Master$N23=ifelse(is.na(NRMP_Master$IDNUMBER)|NRMP_Master$IDNUMBER=="",0,NRMP_Master$N23)
+    NRMP_Master$N23[is.na(NRMP_Master$N23)]=0
     
     # Making sure animals don't change species among captures
     spcheck=tapply(NRMP_Master$SPECIES,NRMP_Master$IDState,function(x)length(unique(x))>1)
